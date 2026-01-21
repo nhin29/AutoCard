@@ -20,24 +20,11 @@
       },
       "ios": {
         "simulator": true
-      },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "",
-        "EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY": ""
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
-      },
-      "ios": {
-        "bundleIdentifier": "com.autocard.app"
-      },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "",
-        "EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY": ""
       }
     }
   },
