@@ -1,0 +1,35 @@
+import Svg, { ClipPath, Defs, G, Path, Rect } from 'react-native-svg';
+
+interface EditIconProps {
+  width?: number;
+  height?: number;
+  color?: string;
+}
+
+export function EditIcon({ width = 10, height = 10, color = '#FFFFFF' }: EditIconProps) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 10 10" fill="none">
+      <G clipPath="url(#clip0_8098_96327)">
+        <Path
+          d="M3.97208 4.64582C3.90162 4.71629 3.84573 4.79996 3.80763 4.89205C3.76952 4.98413 3.74994 5.08283 3.75 5.18248V6.24998H4.82417C5.02542 6.24998 5.21875 6.16998 5.36125 6.02748L8.52792 2.85915C8.59853 2.78871 8.65455 2.70503 8.69278 2.6129C8.731 2.52078 8.75068 2.42202 8.75068 2.32228C8.75068 2.22254 8.731 2.12377 8.69278 2.03165C8.65455 1.93952 8.59853 1.85584 8.52792 1.7854L8.215 1.47248C8.14455 1.40181 8.06085 1.34573 7.96868 1.30747C7.87652 1.26921 7.77771 1.24951 7.67792 1.24951C7.57813 1.24951 7.47932 1.26921 7.38715 1.30747C7.29499 1.34573 7.21128 1.40181 7.14083 1.47248L3.97208 4.64582Z"
+          stroke={color}
+          strokeWidth="0.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M8.75 5C8.75 6.76792 8.75 7.65167 8.20083 8.20083C7.65167 8.75 6.7675 8.75 5 8.75C3.2325 8.75 2.34833 8.75 1.79917 8.20083C1.25 7.65167 1.25 6.7675 1.25 5C1.25 3.2325 1.25 2.34833 1.79917 1.79917C2.34833 1.25 3.2325 1.25 5 1.25"
+          stroke={color}
+          strokeWidth="0.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </G>
+      <Defs>
+        <ClipPath id="clip0_8098_96327">
+          <Rect width="10" height="10" fill="white" />
+        </ClipPath>
+      </Defs>
+    </Svg>
+  );
+}
