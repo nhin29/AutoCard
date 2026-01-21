@@ -1,7 +1,7 @@
+import type { AccountType, AuthState, AuthUser, Profile } from '@/types/database';
+import { safeAsyncStorage } from '@/utils/asyncStorageWrapper';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AuthState, AuthUser, Profile, AccountType } from '@/types/database';
 
 /**
  * Signup flow data - accumulated across multiple steps
@@ -200,7 +200,7 @@ export const useAuthStore = create<AuthStoreState>()(
     }),
     {
       name: 'autocard-auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeAsyncStorage),
       // Only persist certain fields, not loading states
       partialize: (state) => ({
         user: state.user,

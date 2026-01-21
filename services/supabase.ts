@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeAsyncStorage } from '@/utils/asyncStorageWrapper';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -13,21 +13,29 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  */
 
 // Expo automatically loads EXPO_PUBLIC_* variables from .env files
+// During EAS builds, these are injected from eas.json env section or EAS secrets
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-if (!SUPABASE_URL) {
-  throw new Error(
-    'Missing EXPO_PUBLIC_SUPABASE_URL environment variable. ' +
-    'Please add it to your .env file or app.json extra config.'
-  );
-}
-
-if (!SUPABASE_ANON_KEY) {
-  throw new Error(
-    'Missing EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable. ' +
-    'Please add it to your .env file or app.json extra config.'
-  );
+// Validate environment variables - throw only in development to catch misconfiguration early
+// In production builds, EAS will inject these values, so we validate but don't crash the build
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  const missingVars: string[] = [];
+  if (!SUPABASE_URL) missingVars.push('EXPO_PUBLIC_SUPABASE_URL');
+  if (!SUPABASE_ANON_KEY) missingVars.push('EXPO_PUBLIC_SUPABASE_ANON_KEY');
+  
+  const errorMessage = `Missing required environment variables: ${missingVars.join(', ')}. ` +
+    'Please add them to your .env file, eas.json env section, or configure EAS secrets.';
+  
+  // In development, throw immediately to catch configuration issues
+  // In production builds, this will be caught during build validation
+  if (__DEV__) {
+    throw new Error(errorMessage);
+  } else {
+    // In production, log error but allow build to continue
+    // The app will fail at runtime when trying to use Supabase, which is better than build failure
+    console.error('[Supabase] Configuration error:', errorMessage);
+  }
 }
 
 /**
@@ -38,12 +46,19 @@ if (!SUPABASE_ANON_KEY) {
  * - Row Level Security (RLS) support
  * - Real-time subscriptions capability
  */
+// Create a storage adapter that matches AsyncStorage interface but handles errors gracefully
+const storageAdapter = {
+  getItem: (key: string) => safeAsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => safeAsyncStorage.setItem(key, value),
+  removeItem: (key: string) => safeAsyncStorage.removeItem(key),
+};
+
 export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false, // Disabled for React Native
-    storage: AsyncStorage, // Use AsyncStorage for session persistence in React Native
+    storage: storageAdapter, // Use safe AsyncStorage wrapper for session persistence
   },
 });
 

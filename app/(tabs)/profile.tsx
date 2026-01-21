@@ -778,7 +778,7 @@ export default function ProfileScreen() {
 
               {/* Location below name */}
               <View style={styles.locationRow}>
-                <IconSymbol name="mappin" size={16} color="#6B7280" />
+                <LocationIcon width={16} height={16} color="#6B7280" />
                 <Text style={styles.locationText}>{getLocation()}</Text>
               </View>
             </View>
@@ -841,7 +841,7 @@ export default function ProfileScreen() {
                 {/* Address Field */}
                 {editingField === 'address' ? (
                   <View style={styles.detailItem}>
-                    <IconSymbol name="mappin" size={16} color="#374151" />
+                    <LocationIcon width={16} height={16} color="#374151" />
                     <TextInput
                       style={styles.detailInput}
                       placeholder="Enter address"
@@ -862,7 +862,7 @@ export default function ProfileScreen() {
                     style={styles.detailItem}
                     onPress={handleAddAddress}
                     {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                    <IconSymbol name="mappin" size={16} color="#374151" />
+                    <LocationIcon width={16} height={16} color="#374151" />
                     <Text style={styles.detailText}>
                       {profile?.business_address || 'Add Address'}
                     </Text>

@@ -1,4 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+// NOTE: expo-av is deprecated in SDK 54, but still functional
+// TODO: Migrate to expo-video when ready (expo-av will be removed in future SDK versions)
 import { AVPlaybackStatus, ResizeMode, Video } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';

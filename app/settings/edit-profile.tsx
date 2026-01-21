@@ -76,15 +76,64 @@ export default function EditProfileScreen() {
   const loadProfile = async () => {
     if (!user?.id) {
       setIsLoading(false);
+      Alert.alert('Error', 'User not found. Please sign in again.');
+      router.back();
       return;
     }
 
     try {
       setIsLoading(true);
+      
+      // Try to use profile from auth store first (faster, avoids network call)
+      if (user.profile) {
+        setProfileState(user.profile);
+        setBusinessName(user.profile.business_name || '');
+        setBusinessAddress(user.profile.business_address || '');
+        setContactPersonName(user.profile.contact_person_name || '');
+        setPhoneNumber(user.profile.phone_number || '');
+        setVatNumber(user.profile.vat_number || '');
+        setDealerLicense(user.profile.dealer_license || '');
+        setInstagramLink(user.profile.instagram_link || '');
+        setFacebookLink(user.profile.facebook_link || '');
+        setWebsiteLink(user.profile.website_link || '');
+        setLogoUri(user.profile.business_logo_url || null);
+        setBannerUri(user.profile.profile_banner_url || null);
+        setIsLoading(false);
+        
+        // Still fetch latest from server in background to ensure we have the most up-to-date data
+        profileService.getCurrentProfile().then(({ profile: profileData, error }) => {
+          if (!error && profileData) {
+            setProfileState(profileData);
+            setBusinessName(profileData.business_name || '');
+            setBusinessAddress(profileData.business_address || '');
+            setContactPersonName(profileData.contact_person_name || '');
+            setPhoneNumber(profileData.phone_number || '');
+            setVatNumber(profileData.vat_number || '');
+            setDealerLicense(profileData.dealer_license || '');
+            setInstagramLink(profileData.instagram_link || '');
+            setFacebookLink(profileData.facebook_link || '');
+            setWebsiteLink(profileData.website_link || '');
+            setLogoUri(profileData.business_logo_url || null);
+            setBannerUri(profileData.profile_banner_url || null);
+          }
+        }).catch((err) => {
+          // Silently fail background update - we already have data from auth store
+          console.warn('[EditProfile] Background profile update failed:', err);
+        });
+        return;
+      }
+      
+      // If no profile in auth store, fetch from server
       const { profile: profileData, error } = await profileService.getCurrentProfile();
       
       if (error) {
-        Alert.alert('Error', 'Failed to load profile. Please try again.');
+        console.error('[EditProfile] Load error:', error);
+        Alert.alert(
+          'Error', 
+          error.includes('Not authenticated') 
+            ? 'Please sign in again to edit your profile.'
+            : 'Failed to load profile. Please check your connection and try again.'
+        );
         router.back();
         return;
       }
@@ -102,11 +151,20 @@ export default function EditProfileScreen() {
         setWebsiteLink(profileData.website_link || '');
         setLogoUri(profileData.business_logo_url || null);
         setBannerUri(profileData.profile_banner_url || null);
+      } else {
+        // No profile data returned - might be a new user
+        console.warn('[EditProfile] No profile data returned');
       }
-    } catch (error) {
-      console.error('[EditProfile] Load error:', error);
-      Alert.alert('Error', 'Failed to load profile. Please try again.');
-      router.back();
+    } catch (error: any) {
+      console.error('[EditProfile] Load exception:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      Alert.alert(
+        'Error', 
+        errorMessage.includes('network') || errorMessage.includes('fetch')
+          ? 'Network error. Please check your connection and try again.'
+          : 'Failed to load profile. Please try again.'
+      );
+      // Don't navigate back immediately - let user try again
     } finally {
       setIsLoading(false);
     }
