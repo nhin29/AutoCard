@@ -1,8 +1,10 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { safeBack } from '@/utils/safeBack';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -28,7 +30,7 @@ export default function FilterScreen() {
   const [countryOfRegistration, setCountryOfRegistration] = useState('');
 
   const handleBack = () => {
-    router.back();
+    safeBack(router);
   };
 
   const handleClearAll = () => {
@@ -43,11 +45,14 @@ export default function FilterScreen() {
 
   const handleApply = () => {
     // TODO: Apply filters and navigate back or update search results
-    router.back();
+    safeBack(router);
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar style="dark" />
 
       {/* Header */}
@@ -71,6 +76,7 @@ export default function FilterScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         
         {/* Category */}
@@ -186,7 +192,7 @@ export default function FilterScreen() {
           <Text style={styles.applyButtonText}>Apply</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

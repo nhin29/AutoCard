@@ -1,5 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { authService } from '@/services/auth';
+import { safeBack } from '@/utils/safeBack';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -52,7 +53,7 @@ export default function ForgotPasswordScreen() {
       setEmailSent(false);
       setError(null);
     } else {
-      router.back();
+      safeBack(router, '/auth/signin');
     }
   };
 
@@ -158,7 +159,8 @@ export default function ForgotPasswordScreen() {
     return (
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"

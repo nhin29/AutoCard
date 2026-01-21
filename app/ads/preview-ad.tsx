@@ -2,11 +2,15 @@ import { ContactModal } from '@/components/ContactModal';
 import { EnquiryModal } from '@/components/EnquiryModal';
 import { EnquirySuccessModal } from '@/components/EnquirySuccessModal';
 import { AlertIcon } from '@/components/icons/AlertIcon';
+import { CalendarIcon } from '@/components/icons/CalendarIcon';
+import { FuelIcon } from '@/components/icons/FuelIcon';
+import { GearIcon } from '@/components/icons/GearIcon';
 import { LocationIcon } from '@/components/icons/LocationIcon';
 import { LoveIcon } from '@/components/icons/LoveIcon';
 import { MessageIcon } from '@/components/icons/MessageIcon';
 import { PhoneIcon } from '@/components/icons/PhoneIcon';
 import { ShareIcon } from '@/components/icons/ShareIcon';
+import { SpeedometerIcon } from '@/components/icons/SpeedometerIcon';
 import { VerifyIcon } from '@/components/icons/VerifyIcon';
 import { ViewerIcon } from '@/components/icons/ViewerIcon';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -14,9 +18,13 @@ import type { Ad } from '@/stores/useAdStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+    Dimensions,
+    FlatList,
     Image,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
     Platform,
     ScrollView,
     StyleSheet,
@@ -24,6 +32,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 
 /**
@@ -63,6 +73,11 @@ export default function PreviewAdScreen() {
   const [contactModalVisible, setContactModalVisible] = useState(false);
   const [enquiryModalVisible, setEnquiryModalVisible] = useState(false);
   const [enquirySuccessVisible, setEnquirySuccessVisible] = useState(false);
+  const autoSlideIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  // Image slider refs
+  const imageFlatListRef = useRef<FlatList>(null);
+  const isScrollingRef = useRef(false);
   
   // Parse ad data from params
   const adData: Omit<Ad, 'id' | 'createdAt' | 'updatedAt'> = params.adData
@@ -90,7 +105,6 @@ export default function PreviewAdScreen() {
       };
 
   const images = adData.uploadedImages || [];
-  const mainImage = images[currentImageIndex] || images[0] || null;
   
   // Placeholder engagement metrics
   const views = 20000;
@@ -104,19 +118,86 @@ export default function PreviewAdScreen() {
                      userProfile?.email?.split('@')[0] || 
                      'Seller';
   const isVerified = userProfile?.is_verified || userProfile?.verification_badge || false;
-  const isTradeSeller = userProfile?.account_type === 'trade' || userProfile?.account_type === 'brand';
+  const isPrivateSeller = userProfile?.account_type === 'private';
   const profileImageUrl = userProfile?.business_logo_url || null;
 
-  const handleBack = () => {
-    router.push('/ads/place-ad');
+  // Auto-slide images every 3 seconds with smooth transitions
+  useEffect(() => {
+    if (images.length <= 1) {
+      return;
+    }
+
+    autoSlideIntervalRef.current = setInterval(() => {
+      if (!isScrollingRef.current) {
+        const nextIndex = (currentImageIndex + 1) % images.length;
+        setCurrentImageIndex(nextIndex);
+        imageFlatListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+      }
+    }, 3000);
+
+    return () => {
+      if (autoSlideIntervalRef.current) {
+        clearInterval(autoSlideIntervalRef.current);
+      }
+    };
+  }, [images.length, currentImageIndex]);
+
+  // Handle manual scroll to update current index
+  const handleImageScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!isScrollingRef.current) {
+      const slideSize = event.nativeEvent.layoutMeasurement.width;
+      const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+      if (index >= 0 && index < images.length && index !== currentImageIndex) {
+        setCurrentImageIndex(index);
+      }
+    }
   };
 
-  const handleRenewAd = () => {
-    // TODO: Implement renew ad functionality
+  // Handle scroll begin to prevent auto-slide during manual scroll
+  const handleScrollBeginDrag = () => {
+    isScrollingRef.current = true;
+  };
+
+  // Handle scroll end to resume auto-slide
+  const handleScrollEndDrag = () => {
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 500);
+  };
+
+  // Handle scroll to index failures
+  const handleScrollToIndexFailed = (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+    setTimeout(() => {
+      imageFlatListRef.current?.scrollToIndex({
+        index: info.index,
+        animated: true,
+      });
+    }, 100);
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const handleViewStory = () => {
+    // TODO: Navigate to story view
+  };
+
+  const handleCall = () => {
+    if (adData.phoneNumber) {
+      setContactModalVisible(true);
+    }
   };
 
   const handleCloseContactModal = () => {
     setContactModalVisible(false);
+  };
+
+  const handleMessage = () => {
+    setEnquiryModalVisible(true);
   };
 
   const handleCloseEnquiryModal = () => {
@@ -136,6 +217,10 @@ export default function PreviewAdScreen() {
     router.replace('/(tabs)');
   };
 
+  const handleNotify = () => {
+    // TODO: Implement notification/save functionality
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -143,17 +228,16 @@ export default function PreviewAdScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.backButtonHeader}
           onPress={handleBack}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
           <IconSymbol name="chevron.left" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Preview Ad</Text>
         <TouchableOpacity
-          style={styles.renewButton}
-          onPress={handleRenewAd}
+          style={styles.viewStoryButton}
+          onPress={handleViewStory}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.renewButtonText}>Renew Ad</Text>
+          <Text style={styles.viewStoryButtonText}>View Story</Text>
         </TouchableOpacity>
       </View>
 
@@ -162,21 +246,41 @@ export default function PreviewAdScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         
-        {/* Hero Image */}
+        {/* Hero Image Slider */}
         <TouchableOpacity
           style={styles.heroImageContainer}
-          onPress={() => {
-            if (images.length > 1) {
-              setCurrentImageIndex((prev) => (prev + 1) % images.length);
-            }
-          }}
-          activeOpacity={images.length > 1 ? 0.9 : 1}
-          {...(Platform.OS === 'web' && { cursor: images.length > 1 ? 'pointer' : 'default' })}>
-          {mainImage ? (
-            <Image
-              source={{ uri: mainImage }}
-              style={styles.heroImage}
-              resizeMode="cover"
+          activeOpacity={0.9}
+          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+          {images.length > 0 ? (
+            <FlatList
+              ref={imageFlatListRef}
+              data={images}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item, index) => `${item}-${index}`}
+              initialScrollIndex={currentImageIndex}
+              onScroll={handleImageScroll}
+              onScrollBeginDrag={handleScrollBeginDrag}
+              onScrollEndDrag={handleScrollEndDrag}
+              onMomentumScrollEnd={handleScrollEndDrag}
+              scrollEventThrottle={16}
+              onScrollToIndexFailed={handleScrollToIndexFailed}
+              getItemLayout={(_, index) => ({
+                length: SCREEN_WIDTH,
+                offset: SCREEN_WIDTH * index,
+                index,
+              })}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
+              )}
+              decelerationRate="fast"
+              snapToInterval={SCREEN_WIDTH}
+              snapToAlignment="start"
             />
           ) : (
             <View style={styles.heroImagePlaceholder}>
@@ -205,23 +309,9 @@ export default function PreviewAdScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Car Title and Engagement */}
+        {/* Car Title */}
         <View style={styles.titleSection}>
           <Text style={styles.carTitle}>{adData.itemName || 'Vehicle'}</Text>
-          <View style={styles.engagementRow}>
-            <View style={styles.metric}>
-              <ViewerIcon width={15} height={11} />
-              <Text style={styles.metricText}>{formatNumber(views)}</Text>
-            </View>
-            <View style={styles.metric}>
-              <LoveIcon width={13} height={12} />
-              <Text style={styles.metricText}>{formatNumber(likes)}</Text>
-            </View>
-            <View style={styles.metric}>
-              <ShareIcon width={11} height={12} />
-              <Text style={styles.metricText}>{formatNumber(shares)}</Text>
-            </View>
-          </View>
         </View>
 
         {/* Location */}
@@ -232,46 +322,70 @@ export default function PreviewAdScreen() {
           </View>
         )}
 
+        {/* Engagement Stats */}
+        <View style={styles.engagementRow}>
+          <View style={styles.metric}>
+            <ViewerIcon width={15} height={11} />
+            <Text style={styles.metricText}>{formatNumber(views)}</Text>
+          </View>
+          <View style={styles.metric}>
+            <LoveIcon width={13} height={12} />
+            <Text style={styles.metricText}>{formatNumber(likes)}</Text>
+          </View>
+          <View style={styles.metric}>
+            <ShareIcon width={11} height={12} />
+            <Text style={styles.metricText}>{formatNumber(shares)}</Text>
+          </View>
+        </View>
+
         {/* Price and Contact Actions */}
         <View style={styles.priceSection}>
           <Text style={styles.price}>
             {adData.currency} {parseInt(adData.amount || '0').toLocaleString()}
           </Text>
           <View style={styles.contactActions}>
-            <View style={[styles.contactButton, styles.callButton]}>
+            <TouchableOpacity
+              style={[styles.contactButton, styles.callButton]}
+              onPress={handleCall}
+              {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
               <PhoneIcon width={21} height={21} color="#1E40AF" />
-            </View>
-            <View style={[styles.contactButton, styles.messageButton]}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.contactButton, styles.messageButton]}
+              onPress={handleMessage}
+              {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
               <MessageIcon width={20} height={19} color="#115E59" />
-            </View>
-            <View style={[styles.contactButton, styles.notifyButton]}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.contactButton, styles.notifyButton]}
+              onPress={handleNotify}
+              {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
               <AlertIcon width={21} height={22} color="#991B1B" />
-              <View style={styles.notificationDot} />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Key Features */}
         <View style={styles.featuresSection}>
           <View style={styles.featureCard}>
-            <IconSymbol name="calendar" size={20} color="#6B7280" />
+            <CalendarIcon width={24} height={24} color="#9CA3AF" />
             <Text style={styles.featureValue}>
               {adData.vanYearOfProduction || '2024'}
             </Text>
           </View>
           <View style={styles.featureCard}>
-            <IconSymbol name="speed" size={20} color="#6B7280" />
+            <SpeedometerIcon width={23} height={21} color="#9CA3AF" />
             <Text style={styles.featureValue}>
-              {adData.mileage ? `${adData.mileage} ${adData.mileageUnit}` : '80,000'}
+              {adData.mileage ? `${adData.mileage}` : '80,000'}
             </Text>
           </View>
           <View style={styles.featureCard}>
-            <IconSymbol name="local-gas-station" size={20} color="#6B7280" />
+            <FuelIcon width={22} height={22} color="#9CA3AF" />
             <Text style={styles.featureValue}>Petrol</Text>
           </View>
           <View style={styles.featureCard}>
-            <IconSymbol name="settings" size={20} color="#6B7280" />
-            <Text style={styles.featureValue}>Automatic</Text>
+            <GearIcon width={15} height={20} color="#9CA3AF" />
+            <Text style={styles.featureValue} numberOfLines={1}>Automatic</Text>
           </View>
         </View>
 
@@ -285,7 +399,6 @@ export default function PreviewAdScreen() {
 
         {/* Specifications */}
         <View style={styles.specificationsSection}>
-          <Text style={styles.specTitle}>Specifications</Text>
           <View style={styles.specGrid}>
             {/* Row 1 */}
             <View style={styles.specGridItem}>
@@ -313,7 +426,7 @@ export default function PreviewAdScreen() {
             </View>
             <View style={styles.specGridItem}>
               <Text style={styles.specLabel}>Trim</Text>
-              <Text style={styles.specValue}>---</Text>
+              <Text style={styles.specValue}>--</Text>
             </View>
           </View>
         </View>
@@ -322,11 +435,19 @@ export default function PreviewAdScreen() {
         <View style={styles.sellerSection}>
           <View style={styles.sellerInfo}>
             <View style={styles.profileImageContainer}>
-              <Image
-                source={require('@/assets/images/message-avatar.png')}
-                style={styles.profileImage}
-                resizeMode="cover"
-              />
+              {profileImageUrl ? (
+                <Image
+                  source={{ uri: profileImageUrl }}
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Image
+                  source={require('@/assets/images/message-avatar.png')}
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              )}
               <View style={styles.addFriendBadge}>
                 <IconSymbol name="plus" size={12} color="#FFFFFF" />
               </View>
@@ -340,13 +461,21 @@ export default function PreviewAdScreen() {
                   </View>
                 )}
               </View>
-              {isTradeSeller && (
-                <View style={styles.tradeSellerBadge}>
-                  <Text style={styles.tradeSellerText}>Trade Seller</Text>
+              {userProfile?.account_type && (
+                <View style={styles.accountTypeBadge}>
+                  <Text style={styles.accountTypeText}>
+                    {userProfile.account_type === 'trade' ? 'Trade Seller' : 
+                     userProfile.account_type === 'private' ? 'Private Seller' : 
+                     userProfile.account_type === 'brand' ? 'Brand' : 
+                     'Seller'}
+                  </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.postedTime}>Posted {formatTimeAgo(new Date().toISOString())}</Text>
+            <View style={styles.postedTimeContainer}>
+              <Text style={styles.postedTimeLabel}>Posted</Text>
+              <Text style={styles.postedTime}>{formatTimeAgo(new Date().toISOString())}</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -360,7 +489,7 @@ export default function PreviewAdScreen() {
         email={userProfile?.email || ''}
         profileImage={profileImageUrl ? { uri: profileImageUrl } : undefined}
         isVerified={isVerified}
-        isTradeSeller={isTradeSeller}
+        isTradeSeller={!isPrivateSeller}
         timestamp={formatTimeAgo(new Date().toISOString())}
       />
 
@@ -393,29 +522,20 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
     paddingHorizontal: 16,
     paddingBottom: 16,
-    backgroundColor: '#F9FAFB',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  backButton: {
+  backButtonHeader: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    fontFamily: 'system-ui',
-  },
-  renewButton: {
+  viewStoryButton: {
     backgroundColor: '#4CAF50',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  renewButtonText: {
+  viewStoryButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
@@ -431,10 +551,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
     position: 'relative',
+    overflow: 'hidden',
   },
   heroImage: {
-    width: '100%',
-    height: '100%',
+    width: SCREEN_WIDTH,
+    height: 300,
   },
   heroImagePlaceholder: {
     width: '100%',
@@ -482,23 +603,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   titleSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 4,
-    marginBottom: 12,
+    paddingTop: 16,
+    marginBottom: 8,
   },
   carTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
-    flex: 1,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  locationText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+    fontFamily: 'system-ui',
   },
   engagementRow: {
     flexDirection: 'row',
+    paddingHorizontal: 16,
     gap: 16,
+    marginBottom: 20,
   },
   metric: {
     flexDirection: 'row',
@@ -511,29 +643,15 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontFamily: 'system-ui',
   },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  locationText: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
-    fontFamily: 'system-ui',
-  },
   priceSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 4,
     marginBottom: 24,
   },
   price: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: '#4CAF50',
     fontFamily: 'system-ui',
@@ -559,88 +677,87 @@ const styles = StyleSheet.create({
   notifyButton: {
     backgroundColor: '#FEE2E2',
   },
-  notificationDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-  },
   featuresSection: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     gap: 12,
     marginBottom: 24,
+    justifyContent: 'center',
   },
   featureCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 12,
+    width: 90,
+    height: 90,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   featureValue: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#374151',
-    fontFamily: 'system-ui',
+    fontWeight: '400',
+    color: '#9CA3AF',
+    fontFamily: 'Source Sans Pro',
     textAlign: 'center',
+    lineHeight: 12,
+    letterSpacing: 0,
+    flexShrink: 0,
+    width: '100%',
   },
   descriptionSection: {
     paddingHorizontal: 16,
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000000',
-    fontFamily: 'system-ui',
-    marginBottom: 12,
-  },
-  descriptionText: {
     fontSize: 14,
     fontWeight: '400',
+    color: '#000000',
+    fontFamily: 'Source Sans Pro',
+    marginBottom: 12,
+    lineHeight: 14,
+    letterSpacing: 0,
+  },
+  descriptionText: {
+    fontSize: 12,
+    fontWeight: '400',
     color: '#374151',
-    fontFamily: 'system-ui',
-    lineHeight: 22,
+    fontFamily: 'Source Sans Pro',
+    lineHeight: 12,
+    letterSpacing: 0,
   },
   specificationsSection: {
     paddingHorizontal: 16,
     marginBottom: 24,
   },
-  specTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000000',
-    fontFamily: 'system-ui',
-    marginBottom: 16,
-  },
   specGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
+    width: '100%',
   },
   specGridItem: {
     flex: 1,
-    maxWidth: '30%',
+    alignItems: 'flex-start',
   },
   specLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '400',
     color: '#000000',
-    fontFamily: 'system-ui',
+    fontFamily: 'Source Sans Pro',
     marginBottom: 8,
+    lineHeight: 12,
+    letterSpacing: 0,
+    textAlign: 'center',
   },
   specValue: {
     fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
-    fontFamily: 'system-ui',
+    fontFamily: 'Source Sans Pro',
+    lineHeight: 12,
+    letterSpacing: 0,
+    textAlign: 'left',
   },
   sellerSection: {
     paddingHorizontal: 16,
@@ -648,7 +765,7 @@ const styles = StyleSheet.create({
   },
   sellerInfo: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
   },
   profileImageContainer: {
@@ -676,6 +793,8 @@ const styles = StyleSheet.create({
   },
   sellerDetails: {
     flex: 1,
+    justifyContent: 'center',
+    height: 56,
   },
   sellerNameRow: {
     flexDirection: 'row',
@@ -693,17 +812,34 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
   },
-  tradeSellerBadge: {
+  accountTypeBadge: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 2,
+    paddingHorizontal: 16,
     alignSelf: 'flex-start',
-    backgroundColor: '#E0F2FE',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    minWidth: 87,
+    height: 17,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 4,
+    marginTop: 4,
   },
-  tradeSellerText: {
+  accountTypeText: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#15803D',
+    fontFamily: 'Source Sans Pro',
+    lineHeight: 13,
+    textAlign: 'center',
+  },
+  postedTimeContainer: {
+    alignItems: 'flex-end',
+  },
+  postedTimeLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#0369A1',
+    fontWeight: '400',
+    color: '#6B7280',
     fontFamily: 'system-ui',
   },
   postedTime: {
@@ -711,7 +847,5 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
-    alignSelf: 'flex-start',
-    marginTop: 4,
   },
 });

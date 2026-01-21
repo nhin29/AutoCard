@@ -18,7 +18,7 @@ import type { AdStatus, AdType, Ad as DatabaseAd, MileageUnit } from '@/types/da
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 /**
  * Place Ad Screen - Refactored
@@ -165,6 +165,9 @@ export default function PlaceAdScreen() {
   const params = useLocalSearchParams<{ scannedPlateNumber?: string; showPlateInput?: string; adId?: string }>();
   const { user } = useAuthStore();
   const addAd = useAdStore((state) => state.addAd);
+  const updateAd = useAdStore((state) => state.updateAd);
+  const getAdById = useAdStore((state) => state.getAdById);
+  const syncAdFromDatabase = useAdStore((state) => state.syncAdFromDatabase);
   const draftAd = useAdStore((state) => state.draftAd);
   const setDraftAd = useAdStore((state) => state.setDraftAd);
   
@@ -526,7 +529,9 @@ export default function PlaceAdScreen() {
   };
 
   const handleBack = () => {
-    router.back();
+    // Always navigate to home page instead of going back in history
+    // This prevents going back to preview page when coming from preview
+    router.replace('/(tabs)');
   };
 
   const handleReset = () => {
@@ -718,8 +723,9 @@ export default function PlaceAdScreen() {
         // Convert database ad to store format for local state
         const storeAd: Ad = convertDatabaseAdToStore(updateResult.ad);
         
-        // Update ad in store
-        addAd(storeAd);
+        // Sync ad in store - this will update if exists, or add if new
+        // syncAdFromDatabase checks for existing ad by ID and updates it, preventing duplicates
+        syncAdFromDatabase(storeAd);
         
         // Clear draft
         setDraftAd(null);
@@ -861,7 +867,10 @@ export default function PlaceAdScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar style="dark" />
 
       <PlaceAdHeader onBack={handleBack} onReset={handleReset} />
@@ -869,6 +878,7 @@ export default function PlaceAdScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         
         <CategorySelector
@@ -1011,9 +1021,10 @@ export default function PlaceAdScreen() {
           onPublish={handlePublish}
           onPreview={handlePreview}
           isPublishing={isPublishing}
+          isEditMode={isEditMode}
         />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,5 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { adService } from '@/services/ad';
+import { safeBack } from '@/utils/safeBack';
 import type { Ad } from '@/stores/useAdStore';
 import { useAdStore } from '@/stores/useAdStore';
 import type { Ad as DatabaseAd } from '@/types/database';
@@ -128,7 +129,7 @@ export default function AdImagesGridScreen() {
           <Text style={styles.errorText}>Ad not found</Text>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => safeBack(router)}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>

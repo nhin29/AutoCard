@@ -12,12 +12,13 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import type { Ad as DatabaseAd, Profile } from '@/types/database';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
     FlatList,
     Image,
+    KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
@@ -66,10 +67,24 @@ export default function ProfileScreen() {
   const [userAds, setUserAds] = useState<DatabaseAd[]>([]);
   const [isLoadingAds, setIsLoadingAds] = useState(false);
 
+  // Track if profile was just updated to avoid unnecessary reload
+  const profileUpdateTimestampRef = useRef<number>(0);
+
   useEffect(() => {
-    loadProfileData();
+    // Only reload if profile is not in auth store or if it's been more than 5 seconds since last update
+    // This prevents unnecessary reloads after save operations
+    const shouldReload = !user?.profile || 
+      (Date.now() - profileUpdateTimestampRef.current > 5000);
+    
+    if (shouldReload) {
+      loadProfileData();
+    } else if (user?.profile) {
+      // Use profile from auth store if available and recent
+      setProfile(user.profile);
+      setIsLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.id]);
 
   // Load user's ads when ads tab is active
   useEffect(() => {
@@ -83,6 +98,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (user?.profile) {
       setProfile(user.profile);
+      profileUpdateTimestampRef.current = Date.now();
     }
   }, [user?.profile]);
 
@@ -98,16 +114,18 @@ export default function ProfileScreen() {
       // Use profile from auth store if available, otherwise fetch
       if (user.profile) {
         setProfile(user.profile);
+        profileUpdateTimestampRef.current = Date.now();
       } else {
         const { profile: profileData, error: profileError } = await profileService.getCurrentProfile();
         if (profileError) {
           console.error('[Profile] Load error:', profileError);
         } else if (profileData) {
           setProfile(profileData);
+          profileUpdateTimestampRef.current = Date.now();
         }
       }
 
-      // Load stats
+      // Load stats (only if not recently loaded)
       const statsData = await profileService.getUserStats(user.id);
       if (!statsData.error) {
         setStats(statsData);
@@ -195,9 +213,12 @@ export default function ProfileScreen() {
 
     try {
       setIsSaving(true);
-      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile({
-        business_address: addressValue.trim() || null,
-      });
+      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(
+        {
+          business_address: addressValue.trim() || null,
+        },
+        user.id
+      );
 
       if (error) {
         console.error('[Profile] Save address error:', error);
@@ -221,9 +242,12 @@ export default function ProfileScreen() {
 
     try {
       setIsSaving(true);
-      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile({
-        phone_number: phoneValue.trim() || null,
-      });
+      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(
+        {
+          phone_number: phoneValue.trim() || null,
+        },
+        user.id
+      );
 
       if (error) {
         console.error('[Profile] Save phone error:', error);
@@ -286,7 +310,10 @@ export default function ProfileScreen() {
           break;
       }
 
-      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(updates);
+      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(
+        updates,
+        user.id
+      );
 
       if (error) {
         console.error('[Profile] Save social link error:', error);
@@ -327,7 +354,10 @@ export default function ProfileScreen() {
           break;
       }
 
-      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(updates);
+      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(
+        updates,
+        user.id
+      );
 
       if (error) {
         console.error('[Profile] Unlink social error:', error);
@@ -667,7 +697,10 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar style="dark" />
 
       {/* Top Navigation Bar */}
@@ -689,6 +722,7 @@ export default function ProfileScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         {/* Header: Banner Image and Avatar */}
         <View style={styles.headerContainer}>
@@ -1150,7 +1184,7 @@ export default function ProfileScreen() {
 
       {/* Sidebar */}
       <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

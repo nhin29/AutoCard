@@ -1,14 +1,16 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useState } from 'react';
 import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 interface EnquiryModalProps {
@@ -86,22 +88,31 @@ export function EnquiryModal({
       transparent
       animationType="slide"
       onRequestClose={onClose}>
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Enquire about {itemName}</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={styles.closeButtonCircle}>
-                <IconSymbol name="xmark" size={12} color="#FFFFFF" />
-              </View>
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+        <Pressable style={styles.modalOverlayInner} onPress={onClose}>
+          <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Enquire about {itemName}</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={onClose}
+                {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+                <View style={styles.closeButtonCircle}>
+                  <IconSymbol name="xmark" size={12} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.contentContainer}>
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.contentContainer}>
             {/* Full Name Field */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Full Name</Text>
@@ -239,9 +250,11 @@ export function EnquiryModal({
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
               <Text style={styles.submitButtonText}>Submit Enquiry</Text>
             </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -249,8 +262,17 @@ export function EnquiryModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+  },
+  modalOverlayInner: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  scrollView: {
+    maxHeight: '90%',
+  },
+  scrollContent: {
+    paddingBottom: 16,
   },
   modalContainer: {
     width: '100%',

@@ -30,6 +30,8 @@ import {
     Dimensions,
     FlatList,
     Image,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
     Platform,
     ScrollView,
     StyleSheet,
@@ -278,6 +280,10 @@ export default function AdDetailScreen() {
   
   // Related ads state
   const [relatedAds, setRelatedAds] = useState<Ad[]>([]);
+  
+  // Image slider refs
+  const imageFlatListRef = useRef<FlatList>(null);
+  const isScrollingRef = useRef(false);
 
   // Load ad from store or database
   useEffect(() => {
@@ -343,7 +349,7 @@ export default function AdDetailScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ad?.userId]);
 
-  // Auto-slide images every 1 second (must be called before early returns)
+  // Auto-slide images every 3 seconds with smooth transitions (must be called before early returns)
   const images = ad?.uploadedImages || [];
   useEffect(() => {
     if (!ad || images.length <= 1) {
@@ -351,8 +357,15 @@ export default function AdDetailScreen() {
     }
 
     autoSlideIntervalRef.current = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 1000);
+      if (!isScrollingRef.current) {
+        const nextIndex = (currentImageIndex + 1) % images.length;
+        setCurrentImageIndex(nextIndex);
+        imageFlatListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+      }
+    }, 3000); // Changed from 1000ms to 3000ms for slower, smoother transitions
 
     return () => {
       if (autoSlideIntervalRef.current) {
@@ -360,51 +373,121 @@ export default function AdDetailScreen() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ad?.id, images.length]);
+  }, [ad?.id, images.length, currentImageIndex]);
+
+  // Handle manual scroll to update current index
+  const handleImageScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!isScrollingRef.current) {
+      const slideSize = event.nativeEvent.layoutMeasurement.width;
+      const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+      if (index >= 0 && index < images.length && index !== currentImageIndex) {
+        setCurrentImageIndex(index);
+      }
+    }
+  };
+
+  // Handle scroll begin to prevent auto-slide during manual scroll
+  const handleScrollBeginDrag = () => {
+    isScrollingRef.current = true;
+  };
+
+  // Handle scroll end to resume auto-slide
+  const handleScrollEndDrag = () => {
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 500);
+  };
+
+  // Handle scroll to index failures
+  const handleScrollToIndexFailed = (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+    // Wait a bit and try again
+    setTimeout(() => {
+      imageFlatListRef.current?.scrollToIndex({
+        index: info.index,
+        animated: true,
+      });
+    }, 100);
+  };
 
   // Set up real-time subscription for this specific ad (must be called before early returns)
   // Note: This hook is always called, but subscription only happens if ad exists
+  // Subscription failures are handled gracefully - app continues to work without realtime updates
   useEffect(() => {
     if (!ad?.id) {
       return;
     }
 
     const adId = ad.id;
+    let unsubscribe: (() => void) | null = null;
     
-    const unsubscribe = subscribeToAd(adId, (payload) => {
-      try {
-        if (payload.event === 'UPDATE' && payload.new) {
-          // Ad updated - update local state
-          const convertedAd = convertDatabaseAdToStore(payload.new);
-          setAd(convertedAd);
-        } else if (payload.event === 'DELETE' && payload.old) {
-          // Ad deleted - navigate back
-          Alert.alert(
-            'Ad Removed',
-            'This ad has been removed by the seller.',
-            [
-              {
-                text: 'OK',
-                onPress: () => router.back(),
-              },
-            ]
-          );
+    try {
+      unsubscribe = subscribeToAd(adId, (payload) => {
+        try {
+          if (payload.event === 'UPDATE' && payload.new) {
+            // Ad updated - update local state
+            const convertedAd = convertDatabaseAdToStore(payload.new);
+            setAd(convertedAd);
+          } else if (payload.event === 'DELETE' && payload.old) {
+            // Ad deleted - navigate back
+            Alert.alert(
+              'Ad Removed',
+              'This ad has been removed by the seller.',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => router.back(),
+                },
+              ]
+            );
+          }
+        } catch (error) {
+          // Silently handle errors in callback
+          if (__DEV__) {
+            console.warn('[AdDetail] Error handling real-time update:', error);
+          }
         }
-      } catch (error) {
-        console.error('[AdDetail] Error handling real-time update:', error);
+      });
+    } catch (error) {
+      // Silently handle subscription creation errors
+      if (__DEV__) {
+        console.warn('[AdDetail] Failed to create ad subscription:', error);
       }
-    });
+    }
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (error) {
+          // Silently handle cleanup errors
+          if (__DEV__) {
+            console.warn('[AdDetail] Error cleaning up ad subscription:', error);
+          }
+        }
+      }
     };
   }, [ad?.id, router]);
+
+  // Helper function to check if a string is a valid UUID format
+  const isValidUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
 
   // Fetch related ads from database when ad is loaded (must be called before early returns)
   useEffect(() => {
     const fetchRelatedAds = async () => {
       if (!ad || !ad.category) {
         setRelatedAds([]);
+        return;
+      }
+
+      // Check if ad.id is a valid UUID (database ID) or store-generated ID
+      // Only fetch from database if we have a valid UUID
+      if (!isValidUUID(ad.id)) {
+        // Ad has store-generated ID, use store ads as fallback
+        const fallbackAds = ads.filter((a) => a.id !== ad.id && a.category === ad.category).slice(0, 5);
+        setRelatedAds(fallbackAds);
         return;
       }
 
@@ -452,7 +535,7 @@ export default function AdDetailScreen() {
           <Text style={styles.errorText}>Ad not found</Text>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => router.replace('/(tabs)')}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
@@ -461,7 +544,6 @@ export default function AdDetailScreen() {
     );
   }
 
-  const mainImage = images[currentImageIndex] || images[0] || null;
 
   // Placeholder engagement metrics
   const views = 20000;
@@ -478,7 +560,8 @@ export default function AdDetailScreen() {
   const profileImageUrl = userProfile?.business_logo_url || null;
 
   const handleBack = () => {
-    router.back();
+    // Navigate to home page instead of going back in history
+    router.replace('/(tabs)');
   };
 
   const handleViewStory = () => {
@@ -557,7 +640,7 @@ export default function AdDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         
-        {/* Hero Image */}
+        {/* Hero Image Slider */}
         <TouchableOpacity
           style={styles.heroImageContainer}
           onPress={() => {
@@ -571,11 +654,36 @@ export default function AdDetailScreen() {
           }}
           activeOpacity={0.9}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          {mainImage ? (
-            <Image
-              source={{ uri: mainImage }}
-              style={styles.heroImage}
-              resizeMode="cover"
+          {images.length > 0 ? (
+            <FlatList
+              ref={imageFlatListRef}
+              data={images}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item, index) => `${item}-${index}`}
+              initialScrollIndex={currentImageIndex}
+              onScroll={handleImageScroll}
+              onScrollBeginDrag={handleScrollBeginDrag}
+              onScrollEndDrag={handleScrollEndDrag}
+              onMomentumScrollEnd={handleScrollEndDrag}
+              scrollEventThrottle={16}
+              onScrollToIndexFailed={handleScrollToIndexFailed}
+              getItemLayout={(_, index) => ({
+                length: SCREEN_WIDTH,
+                offset: SCREEN_WIDTH * index,
+                index,
+              })}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
+              )}
+              decelerationRate="fast"
+              snapToInterval={SCREEN_WIDTH}
+              snapToAlignment="start"
             />
           ) : (
             <View style={styles.heroImagePlaceholder}>
@@ -876,10 +984,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
     position: 'relative',
+    overflow: 'hidden',
   },
   heroImage: {
-    width: '100%',
-    height: '100%',
+    width: SCREEN_WIDTH,
+    height: 300,
   },
   heroImagePlaceholder: {
     width: '100%',

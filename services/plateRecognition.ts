@@ -12,8 +12,23 @@ export interface PlateRecognitionResult {
   error?: string;
 }
 
-const PLATE_RECOGNIZER_API_KEY = '4d1eeb58d6f84e96aaaa9a6d12b9894b63dd44ca';
+/**
+ * Plate Recognizer API Configuration
+ * 
+ * Environment variables required:
+ * - EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY: Your Plate Recognizer API key
+ * 
+ * Get your API key from: https://platerecognizer.com/
+ */
+const PLATE_RECOGNIZER_API_KEY = process.env.EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY || '';
 const API_URL = 'https://api.platerecognizer.com/v1/plate-reader/';
+
+if (!PLATE_RECOGNIZER_API_KEY) {
+  console.warn(
+    '[PlateRecognizer] Missing EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY environment variable. ' +
+    'Plate recognition will not work. Please add it to your .env file.'
+  );
+}
 
 /**
  * Extract license plate from image using Plate Recognizer API
@@ -24,6 +39,14 @@ const API_URL = 'https://api.platerecognizer.com/v1/plate-reader/';
  */
 export async function recognizePlateFromUri(imageUri: string): Promise<PlateRecognitionResult> {
   try {
+    if (!PLATE_RECOGNIZER_API_KEY) {
+      return { 
+        plateNumber: null, 
+        confidence: 0, 
+        error: 'Plate Recognizer API key not configured. Please set EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY in your .env file.' 
+      };
+    }
+
     if (!imageUri) {
       return { plateNumber: null, confidence: 0, error: 'No image URI provided' };
     }

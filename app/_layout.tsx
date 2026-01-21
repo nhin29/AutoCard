@@ -1,8 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -25,8 +24,6 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { user, setUser, setSession, setProfile, setLoading, logout } = useAuthStore();
-  const appState = useRef(AppState.currentState);
-  const isSigningOut = useRef(false);
 
   /**
    * Initialize auth state on app load
@@ -107,6 +104,9 @@ export default function RootLayout() {
   /**
    * Subscribe to profile realtime updates when user is authenticated
    * Automatically updates auth store when profile changes occur
+   * 
+   * Note: Subscription failures are handled gracefully - app continues to work
+   * without realtime updates if realtime is disabled or unavailable
    */
   useEffect(() => {
     if (!user?.id) {
@@ -114,65 +114,45 @@ export default function RootLayout() {
       return;
     }
 
-    // Subscribe to profile changes
-    const unsubscribeProfile = subscribeToProfile(user.id, (payload) => {
-      if (payload.event === 'UPDATE' && payload.new) {
-        // Update profile in auth store
-        setProfile(payload.new);
+    let unsubscribeProfile: (() => void) | null = null;
+
+    try {
+      // Subscribe to profile changes with error handling
+      unsubscribeProfile = subscribeToProfile(user.id, (payload) => {
+        try {
+          if (payload.event === 'UPDATE' && payload.new) {
+            // Update profile in auth store
+            setProfile(payload.new);
+          }
+        } catch (error) {
+          // Silently handle errors in callback
+          if (__DEV__) {
+            console.warn('[RootLayout] Error handling profile update:', error);
+          }
+        }
+      });
+    } catch (error) {
+      // Silently handle subscription creation errors
+      // App will continue to work without realtime updates
+      if (__DEV__) {
+        console.warn('[RootLayout] Failed to create profile subscription:', error);
       }
-    });
+    }
 
     // Cleanup subscription on unmount or when user changes
     return () => {
-      unsubscribeProfile();
-    };
-  }, [user?.id, setProfile]);
-
-  /**
-   * Handle app state changes to destroy sessions when app closes
-   * Destroys user session when app goes to background or inactive
-   */
-  useEffect(() => {
-    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      // Update app state ref immediately to prevent race conditions
-      const previousState = appState.current;
-      appState.current = nextAppState;
-      
-      // When app goes to background or inactive, destroy the session
-      if (
-        previousState.match(/active|foreground/) &&
-        nextAppState.match(/inactive|background/)
-      ) {
-        // Prevent multiple simultaneous signouts
-        if (isSigningOut.current) {
-          return;
-        }
-        
-        // App is going to background - destroy session
-        const currentUser = user;
-        if (currentUser) {
-          isSigningOut.current = true;
-          try {
-            await authService.signOut();
-            logout();
-            console.log('[RootLayout] Session destroyed on app close');
-          } catch (error) {
-            console.error('[RootLayout] Error destroying session on app close:', error);
-            // Still clear local state even if server signout fails
-            logout();
-          } finally {
-            isSigningOut.current = false;
+      if (unsubscribeProfile) {
+        try {
+          unsubscribeProfile();
+        } catch (error) {
+          // Silently handle cleanup errors
+          if (__DEV__) {
+            console.warn('[RootLayout] Error cleaning up profile subscription:', error);
           }
         }
       }
     };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
-  }, [user, logout]);
+  }, [user?.id, setProfile]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

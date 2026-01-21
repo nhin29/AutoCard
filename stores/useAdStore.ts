@@ -149,17 +149,30 @@ export const useAdStore = create<AdStore>((set, get) => ({
   /**
    * Sync ad from database (for real-time updates)
    * Adds or updates an ad from database format
+   * Ensures no duplicates by checking ID match (strict equality)
    */
   syncAdFromDatabase: (databaseAd) => {
     set((state) => {
-      const existingIndex = state.ads.findIndex((ad) => ad.id === databaseAd.id);
+      // Use strict equality to ensure ID matching works correctly
+      const existingIndex = state.ads.findIndex((ad) => String(ad.id) === String(databaseAd.id));
       
       if (existingIndex >= 0) {
-        // Update existing ad
+        // Update existing ad - replace it completely with new data
         const updatedAds = [...state.ads];
         updatedAds[existingIndex] = databaseAd;
         return { ads: updatedAds };
       } else {
+        // Add new ad only if it doesn't exist
+        // Double-check to prevent duplicates
+        const alreadyExists = state.ads.some((ad) => String(ad.id) === String(databaseAd.id));
+        if (alreadyExists) {
+          // Ad exists but wasn't found by findIndex - update it
+          return {
+            ads: state.ads.map((ad) =>
+              String(ad.id) === String(databaseAd.id) ? databaseAd : ad
+            ),
+          };
+        }
         // Add new ad
         return { ads: [databaseAd, ...state.ads] };
       }

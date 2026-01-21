@@ -9,14 +9,16 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Alert,
-  Image,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 /**
@@ -446,7 +448,10 @@ export default function SignUpStep3Screen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar style="dark" />
 
       {/* Header: Back + Title */}
@@ -463,8 +468,13 @@ export default function SignUpStep3Screen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Form Content - No scroll, fits on screen */}
-      <View style={styles.formContent}>
+      {/* Form Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.formContent}>
         {/* Email Address */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Email Address</Text>
@@ -663,26 +673,27 @@ export default function SignUpStep3Screen() {
             <Text style={styles.errorText}>{errors.logoUri}</Text>
           )}
         </View>
-      </View>
-
-      {/* Bottom: Continue + Login */}
-      <View style={styles.bottomSection}>
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={handleContinue}
-          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
-
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginPrompt}>Already have an account?</Text>
-          <TouchableOpacity
-            onPress={handleLogin}
-            {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.loginLink}>Login</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+
+        {/* Bottom: Continue + Login */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleContinue}
+            {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+            <Text style={styles.continueButtonText}>Continue</Text>
+          </TouchableOpacity>
+
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginPrompt}>Already have an account?</Text>
+            <TouchableOpacity
+              onPress={handleLogin}
+              {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+              <Text style={styles.loginLink}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
 
       {/* Image Picker Modal */}
       <ImagePickerModal
@@ -721,7 +732,7 @@ export default function SignUpStep3Screen() {
         onSave={handleBannerEditorSave}
         onCancel={handleBannerEditorCancel}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -729,6 +740,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',

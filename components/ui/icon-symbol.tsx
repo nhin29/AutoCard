@@ -82,6 +82,8 @@ const MAPPING: Record<string, MaterialIconName> = {
   'play.fill': 'play-arrow',
   // Arrow icons
   'arrow.down': 'keyboard-arrow-down',
+  'arrow.right': 'arrow-forward',
+  'rectangle.portrait.and.arrow.right': 'exit-to-app',
 };
 
 export type IconSymbolName = keyof typeof MAPPING;

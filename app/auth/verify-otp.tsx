@@ -6,8 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
     Modal,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -244,7 +246,10 @@ export default function VerifyOTPScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar style="dark" />
 
       {/* Header: Back Button + Title */}
@@ -261,7 +266,11 @@ export default function VerifyOTPScreen() {
       </View>
 
       {/* Main Content */}
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
         {/* Title */}
         <Text style={styles.title}>OTP code verification</Text>
 
@@ -352,7 +361,8 @@ export default function VerifyOTPScreen() {
             <Text style={styles.loginLink}>Login</Text>
           </TouchableOpacity>
         </View>
-      </View>
+        </View>
+      </ScrollView>
 
       {/* Review Modal (for Trade accounts) */}
       <Modal
@@ -375,7 +385,7 @@ export default function VerifyOTPScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -410,6 +420,9 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   content: {
     flex: 1,

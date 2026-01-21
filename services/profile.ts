@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
 import type { Profile, ProfileUpdate } from '@/types/database';
+import { supabase } from './supabase';
 
 /**
  * Profile Service
@@ -120,18 +120,29 @@ export async function updateProfile(
 
 /**
  * Update current user's profile
+ * 
+ * @param updates - Profile fields to update
+ * @param userId - Optional user ID to avoid extra auth call if already available
  */
 export async function updateCurrentProfile(
-  updates: ProfileUpdate
+  updates: ProfileUpdate,
+  userId?: string
 ): Promise<ProfileResult> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Use provided userId if available, otherwise fetch from auth
+    let targetUserId = userId;
     
-    if (userError || !user) {
-      return { profile: null, error: 'Not authenticated' };
+    if (!targetUserId) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        return { profile: null, error: 'Not authenticated' };
+      }
+      
+      targetUserId = user.id;
     }
 
-    return updateProfile(user.id, updates);
+    return updateProfile(targetUserId, updates);
   } catch (error: any) {
     console.error('[Profile] Update current profile exception:', error.message);
     return { profile: null, error: error.message };

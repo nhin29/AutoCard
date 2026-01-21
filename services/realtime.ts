@@ -31,6 +31,30 @@ export type RealtimeAdCallback = (payload: RealtimeAdPayload) => void;
 export type RealtimeProfileCallback = (payload: RealtimeProfilePayload) => void;
 
 // ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Check if realtime is available and enabled
+ * 
+ * @returns Promise<boolean> - true if realtime is available
+ */
+async function isRealtimeAvailable(): Promise<boolean> {
+  try {
+    // Try to get a channel to test if realtime is available
+    const testChannel = supabase.channel('realtime-test');
+    // If we can create a channel, realtime is likely available
+    // Note: This is a best-effort check - actual subscription may still fail
+    return true;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[Realtime] Realtime may not be available:', error);
+    }
+    return false;
+  }
+}
+
+// ============================================
 // REAL-TIME SUBSCRIPTIONS
 // ============================================
 
@@ -95,15 +119,24 @@ export function subscribeToAds(callback: RealtimeAdCallback): () => void {
         if (status === 'SUBSCRIBED') {
           // Successfully subscribed
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error - subscription failed', err || '');
-          // Don't throw - just log the error
+          // Silently handle channel errors - don't show console errors
+          // This can happen if realtime is not enabled or network issues occur
+          // The app will continue to work without realtime updates
+          if (__DEV__) {
+            console.warn('[Realtime] Channel subscription failed (realtime may be disabled):', err?.message || '');
+          }
         } else if (status === 'TIMED_OUT') {
-          console.warn('[Realtime] Subscription timed out');
+          if (__DEV__) {
+            console.warn('[Realtime] Subscription timed out');
+          }
         } else if (status === 'CLOSED') {
-          // Subscription closed
+          // Subscription closed - normal behavior
         }
       } catch (error) {
-        console.error('[Realtime] Error in subscription callback:', error);
+        // Silently catch any errors in subscription callback
+        if (__DEV__) {
+          console.warn('[Realtime] Error in subscription callback:', error);
+        }
       }
     });
 
@@ -150,11 +183,20 @@ export function subscribeToAd(
         }
       }
     )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        // Successfully subscribed
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error(`[Realtime] Channel error for ad ${adId}`);
+    .subscribe((status, err) => {
+      try {
+        if (status === 'SUBSCRIBED') {
+          // Successfully subscribed
+        } else if (status === 'CHANNEL_ERROR') {
+          // Silently handle channel errors
+          if (__DEV__) {
+            console.warn(`[Realtime] Ad subscription failed for ad ${adId} (realtime may be disabled):`, err?.message || '');
+          }
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.warn(`[Realtime] Error in ad subscription callback for ${adId}:`, error);
+        }
       }
     });
 
@@ -200,11 +242,20 @@ export function subscribeToUserAds(
         }
       }
     )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        // Successfully subscribed
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error(`[Realtime] Channel error for user ${userId} ads`);
+    .subscribe((status, err) => {
+      try {
+        if (status === 'SUBSCRIBED') {
+          // Successfully subscribed
+        } else if (status === 'CHANNEL_ERROR') {
+          // Silently handle channel errors
+          if (__DEV__) {
+            console.warn(`[Realtime] User ads subscription failed for user ${userId} (realtime may be disabled):`, err?.message || '');
+          }
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.warn(`[Realtime] Error in user ads subscription callback for ${userId}:`, error);
+        }
       }
     });
 
@@ -270,15 +321,23 @@ export function subscribeToProfile(
         if (status === 'SUBSCRIBED') {
           // Successfully subscribed
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`[Realtime] Channel error for profile ${userId}`, err || '');
-          // Don't throw - just log the error
+          // Silently handle channel errors - don't show console errors
+          // This can happen if realtime is not enabled or network issues occur
+          if (__DEV__) {
+            console.warn(`[Realtime] Profile subscription failed for user ${userId} (realtime may be disabled):`, err?.message || '');
+          }
         } else if (status === 'TIMED_OUT') {
-          console.warn(`[Realtime] Profile subscription timed out for user ${userId}`);
+          if (__DEV__) {
+            console.warn(`[Realtime] Profile subscription timed out for user ${userId}`);
+          }
         } else if (status === 'CLOSED') {
-          // Subscription closed
+          // Subscription closed - normal behavior
         }
       } catch (error) {
-        console.error(`[Realtime] Error in profile subscription callback for ${userId}:`, error);
+        // Silently catch any errors in subscription callback
+        if (__DEV__) {
+          console.warn(`[Realtime] Error in profile subscription callback for ${userId}:`, error);
+        }
       }
     });
 

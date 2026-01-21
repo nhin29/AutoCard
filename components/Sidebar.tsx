@@ -2,7 +2,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { authService } from '@/services/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface SidebarProps {
@@ -21,6 +21,7 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
   const accountType = user?.profile?.account_type || 'private';
   const slideAnim = useRef(new Animated.Value(-300)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -52,8 +53,17 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
     }
   }, [visible]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    // Show confirmation modal
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = async () => {
     try {
+      // Close modal first
+      setShowLogoutModal(false);
+      onClose();
+      
       // Sign out from Supabase
       await authService.signOut();
       // Clear auth store
@@ -63,6 +73,10 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
     } catch (error) {
       console.error('[Sidebar] Logout error:', error);
     }
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const handleDeleteAccount = () => {
@@ -291,6 +305,49 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
           </View>
         </ScrollView>
       </Animated.View>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelLogout}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Icon */}
+            <View style={styles.modalIconContainer}>
+              <View style={styles.modalIconCircle}>
+                <IconSymbol name="rectangle.portrait.and.arrow.right" size={20} color="#FFFFFF" />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.modalTitle}>Log out</Text>
+
+            {/* Message */}
+            <Text style={styles.modalMessage}>
+              Are you sure, you want to log out the app
+            </Text>
+
+            {/* Buttons */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={handleCancelLogout}
+                {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalLogoutButton}
+                onPress={handleConfirmLogout}
+                {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+                <Text style={styles.modalLogoutButtonText}>Log out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
     </Modal>
   );
@@ -474,6 +531,90 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#EF4444',
+    fontFamily: 'system-ui',
+  },
+  // Logout Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalIconContainer: {
+    marginBottom: 16,
+  },
+  modalIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FCE7F3',
+    borderWidth: 2,
+    borderColor: '#F9A8D4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    fontFamily: 'system-ui',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+    fontFamily: 'system-ui',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    height: 44,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    fontFamily: 'system-ui',
+  },
+  modalLogoutButton: {
+    flex: 1,
+    height: 44,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalLogoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
     fontFamily: 'system-ui',
   },
 });

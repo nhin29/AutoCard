@@ -3,6 +3,7 @@ import { ImagePickerModal } from '@/components/place-ad/ImagePickerModal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { profileService } from '@/services/profile';
 import { storageService } from '@/services/storage';
+import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { Profile } from '@/types/database';
 import * as DocumentPicker from 'expo-document-picker';
@@ -352,19 +353,24 @@ export default function EditProfileScreen() {
       return;
     }
 
-    if (!user?.id) {
-      Alert.alert('Error', 'User not found. Please try again.');
-      return;
-    }
-
     setIsSaving(true);
     try {
+      // Get current user from Supabase auth directly (more reliable than store)
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authUser?.id) {
+        Alert.alert('Error', 'Authentication required. Please sign in again.');
+        setIsSaving(false);
+        return;
+      }
+
+      const userId = authUser.id;
       let logoUrl = profile?.business_logo_url || null;
       let bannerUrl = profile?.profile_banner_url || null;
 
       // Upload logo if a new one was selected
       if (logoUri && logoUri !== profile?.business_logo_url) {
-        const uploadResult = await storageService.uploadBusinessLogo(logoUri, user.id);
+        const uploadResult = await storageService.uploadBusinessLogo(logoUri, userId);
         if (uploadResult.error) {
           Alert.alert('Upload Error', uploadResult.error);
           setIsSaving(false);
@@ -380,7 +386,7 @@ export default function EditProfileScreen() {
 
       // Upload banner if a new one was selected
       if (bannerUri && bannerUri !== profile?.profile_banner_url) {
-        const uploadResult = await storageService.uploadProfileBanner(bannerUri, user.id);
+        const uploadResult = await storageService.uploadProfileBanner(bannerUri, userId);
         if (uploadResult.error) {
           Alert.alert('Upload Error', uploadResult.error);
           setIsSaving(false);
@@ -409,10 +415,10 @@ export default function EditProfileScreen() {
         profile_banner_url: bannerUrl,
       };
 
-      // Update profile
-      const { profile: updatedProfile, error } = await profileService.updateProfile(
-        user.id,
-        updates
+      // Update profile - pass userId directly to avoid extra auth call
+      const { profile: updatedProfile, error } = await profileService.updateCurrentProfile(
+        updates,
+        userId
       );
 
       if (error) {
@@ -463,10 +469,12 @@ export default function EditProfileScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         style={styles.keyboardView}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           {/* Profile Banner Upload Section */}
           <View style={styles.section}>

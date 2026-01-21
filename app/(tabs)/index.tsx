@@ -111,59 +111,82 @@ export default function HomeScreen() {
   }, []);
 
   // Set up real-time subscription for ads
+  // Note: Subscription failures are handled gracefully - app continues to work
+  // without realtime updates if realtime is disabled or unavailable
   useEffect(() => {
-    const unsubscribe = subscribeToAds((payload) => {
-      try {
-        if (payload.event === 'INSERT' && payload.new) {
-          // New ad created - add to database ads
-          const convertedAd = convertDatabaseAdToStore(payload.new);
-          
-          // Update database ads state
-          setDatabaseAds((prev) => {
-            // Check if ad already exists (avoid duplicates)
-            if (prev.find((ad) => ad.id === convertedAd.id)) {
-              return prev;
+    let unsubscribe: (() => void) | null = null;
+
+    try {
+      unsubscribe = subscribeToAds((payload) => {
+        try {
+          if (payload.event === 'INSERT' && payload.new) {
+            // New ad created - add to database ads
+            const convertedAd = convertDatabaseAdToStore(payload.new);
+            
+            // Update database ads state
+            setDatabaseAds((prev) => {
+              // Check if ad already exists (avoid duplicates)
+              if (prev.find((ad) => ad.id === convertedAd.id)) {
+                return prev;
+              }
+              // Add new ad at the beginning (most recent first)
+              return [convertedAd, ...prev];
+            });
+          } else if (payload.event === 'UPDATE' && payload.new) {
+            // Ad updated - update in database ads
+            const convertedAd = convertDatabaseAdToStore(payload.new);
+            
+            // Only update if ad is still active
+            if (!payload.new.is_active) {
+              // Ad was deactivated - remove it
+              setDatabaseAds((prev) => prev.filter((ad) => ad.id !== convertedAd.id));
+              removeAdById(convertedAd.id);
+              return;
             }
-            // Add new ad at the beginning (most recent first)
-            return [convertedAd, ...prev];
-          });
-        } else if (payload.event === 'UPDATE' && payload.new) {
-          // Ad updated - update in database ads
-          const convertedAd = convertDatabaseAdToStore(payload.new);
-          
-          // Only update if ad is still active
-          if (!payload.new.is_active) {
-            // Ad was deactivated - remove it
-            setDatabaseAds((prev) => prev.filter((ad) => ad.id !== convertedAd.id));
-            removeAdById(convertedAd.id);
-            return;
+            
+            // Update database ads state
+            setDatabaseAds((prev) =>
+              prev.map((ad) => (ad.id === convertedAd.id ? convertedAd : ad))
+            );
+            
+            // Also sync to store if it exists there
+            syncAdFromDatabase(convertedAd);
+          } else if (payload.event === 'DELETE' && payload.old) {
+            // Ad deleted - remove from database ads
+            const deletedAdId = payload.old.id;
+            
+            // Remove from database ads state
+            setDatabaseAds((prev) => prev.filter((ad) => ad.id !== deletedAdId));
+            
+            // Also remove from store if it exists there
+            removeAdById(deletedAdId);
           }
-          
-          // Update database ads state
-          setDatabaseAds((prev) =>
-            prev.map((ad) => (ad.id === convertedAd.id ? convertedAd : ad))
-          );
-          
-          // Also sync to store if it exists there
-          syncAdFromDatabase(convertedAd);
-        } else if (payload.event === 'DELETE' && payload.old) {
-          // Ad deleted - remove from database ads
-          const deletedAdId = payload.old.id;
-          
-          // Remove from database ads state
-          setDatabaseAds((prev) => prev.filter((ad) => ad.id !== deletedAdId));
-          
-          // Also remove from store if it exists there
-          removeAdById(deletedAdId);
+        } catch (error) {
+          // Silently handle errors in callback
+          if (__DEV__) {
+            console.warn('[HomeScreen] Error handling real-time update:', error);
+          }
         }
-      } catch (error) {
-        console.error('[HomeScreen] Error handling real-time update:', error);
+      });
+    } catch (error) {
+      // Silently handle subscription creation errors
+      if (__DEV__) {
+        console.warn('[HomeScreen] Failed to create ads subscription:', error);
       }
-    });
+    }
 
     // Cleanup subscription on unmount
     return () => {
-      unsubscribe();
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (error) {
+          // Silently handle cleanup errors
+          if (__DEV__) {
+            console.warn('[HomeScreen] Error cleaning up ads subscription:', error);
+          }
+        }
+      }
     };
   }, [syncAdFromDatabase, removeAdById]);
 

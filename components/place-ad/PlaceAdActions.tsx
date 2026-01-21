@@ -5,12 +5,13 @@ interface PlaceAdActionsProps {
   onSaveDraft?: () => void;
   onPreview?: () => void;
   isPublishing?: boolean;
+  isEditMode?: boolean;
 }
 
 /**
  * Action buttons for Place Ad screen (Publish, Save Draft, Preview)
  */
-export function PlaceAdActions({ onPublish, onSaveDraft, onPreview, isPublishing = false }: PlaceAdActionsProps) {
+export function PlaceAdActions({ onPublish, onSaveDraft, onPreview, isPublishing = false, isEditMode = false }: PlaceAdActionsProps) {
   return (
     <View style={styles.actionButtonsContainer}>
       <TouchableOpacity
@@ -21,10 +22,14 @@ export function PlaceAdActions({ onPublish, onSaveDraft, onPreview, isPublishing
         {isPublishing ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#FFFFFF" />
-            <Text style={styles.publishButtonText}>Publishing...</Text>
+            <Text style={styles.publishButtonText}>
+              {isEditMode ? 'Updating...' : 'Publishing...'}
+            </Text>
           </View>
         ) : (
-          <Text style={styles.publishButtonText}>Publish Ad</Text>
+          <Text style={styles.publishButtonText}>
+            {isEditMode ? 'Update Ad' : 'Publish Ad'}
+          </Text>
         )}
       </TouchableOpacity>
       
