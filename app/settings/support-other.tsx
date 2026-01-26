@@ -1,9 +1,11 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     Alert,
     KeyboardAvoidingView,
@@ -23,10 +25,41 @@ import {
  */
 export default function SupportOtherScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const { user } = useAuthStore();
   const [email, setEmail] = useState(user?.email || '');
   const [message, setMessage] = useState('');
   const [uploadedFile, setUploadedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
+
+  // Calculate responsive values (same as report-bug)
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const headerPaddingBottom = isSmall ? SPACING.sm : SPACING.base;
+  const backButtonSize = isSmall ? 40 : 44;
+  const backIconSize = isSmall ? 20 : 24;
+  const headerTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const scrollPaddingTop = isSmall ? SPACING.md : 24;
+  const scrollPaddingBottom = isSmall ? SPACING.xl : 40;
+  const inputLabelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const inputHeight = isSmall ? 44 : 48;
+  const uploadAreaPadding = isSmall ? SPACING.md : 24;
+  const uploadAreaMinHeight = isSmall ? 160 : 200;
+  const uploadIconSize = isSmall ? 24 : 32;
+  const uploadIconContainerSize = isSmall ? 48 : 64;
+  const uploadTextFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const uploadSubtextFontSize = isSmall ? FONT_SIZES.xs : 12;
+  const browseButtonPaddingH = isSmall ? SPACING.sm : SPACING.base;
+  const browseButtonPaddingV = isSmall ? 6 : 8;
+  const browseButtonFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const uploadedFileIconSize = isSmall ? 32 : 40;
+  const uploadedFileNameFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const removeFileButtonSize = isSmall ? 20 : 24;
+  const removeFileIconSize = isSmall ? 12 : 16;
+  const sendButtonHeight = isSmall ? 48 : 52;
+  const sendButtonFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
 
   const handleBack = () => {
     router.back();
@@ -49,7 +82,6 @@ export default function SupportOtherScreen() {
         setUploadedFile(result);
       }
     } catch (error) {
-      console.error('[SupportOther] File picker error:', error);
       Alert.alert('Error', 'Failed to pick file. Please try again.');
     }
   };
@@ -100,29 +132,29 @@ export default function SupportOtherScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingBottom: headerPaddingBottom, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { width: backButtonSize, height: backButtonSize }]}
           onPress={handleBack}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Other</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={[styles.headerTitle, { fontSize: headerTitleFontSize }]}>Other</Text>
+        <View style={[styles.headerSpacer, { width: backButtonSize }]} />
       </View>
 
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding, paddingTop: scrollPaddingTop, paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         
         {/* Email Input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Email Address</Text>
+          <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Email Address</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { height: inputHeight, fontSize: inputFontSize }]}
             value={email}
             onChangeText={setEmail}
             placeholder="Enter your email address"
@@ -135,9 +167,9 @@ export default function SupportOtherScreen() {
 
         {/* Message Input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Message</Text>
+          <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Message</Text>
           <TextInput
-            style={[styles.textInput, styles.textArea]}
+            style={[styles.textInput, styles.textArea, { fontSize: inputFontSize }]}
             value={message}
             onChangeText={setMessage}
             placeholder="How can we help you?"
@@ -150,36 +182,36 @@ export default function SupportOtherScreen() {
 
         {/* Upload Document Section */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Upload Document</Text>
+          <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Upload Document</Text>
           <TouchableOpacity
-            style={styles.uploadArea}
+            style={[styles.uploadArea, { padding: uploadAreaPadding, minHeight: uploadAreaMinHeight }]}
             onPress={handleBrowseFiles}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             {uploadedFile && !uploadedFile.canceled ? (
               <View style={styles.uploadedFileContainer}>
-                <IconSymbol name="folder.fill" size={40} color="#4CAF50" />
-                <Text style={styles.uploadedFileName} numberOfLines={1}>
+                <IconSymbol name="folder.fill" size={uploadedFileIconSize} color="#4CAF50" />
+                <Text style={[styles.uploadedFileName, { fontSize: uploadedFileNameFontSize }]} numberOfLines={1}>
                   {getFileName()}
                 </Text>
                 <TouchableOpacity
-                  style={styles.removeFileButton}
+                  style={[styles.removeFileButton, { width: removeFileButtonSize, height: removeFileButtonSize, borderRadius: removeFileButtonSize / 2 }]}
                   onPress={() => setUploadedFile(null)}
                   {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                  <IconSymbol name="xmark" size={16} color="#EF4444" />
+                  <IconSymbol name="xmark" size={removeFileIconSize} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <View style={styles.uploadIconContainer}>
-                  <IconSymbol name="arrow.up" size={32} color="#9CA3AF" />
+                <View style={[styles.uploadIconContainer, { width: uploadIconContainerSize, height: uploadIconContainerSize, borderRadius: uploadIconContainerSize / 2 }]}>
+                  <IconSymbol name="arrow.up" size={uploadIconSize} color="#9CA3AF" />
                 </View>
-                <Text style={styles.uploadText}>Choose a file</Text>
-                <Text style={styles.uploadSubtext}>txt. docx. pdf. jpeg. Up to 50MB</Text>
+                <Text style={[styles.uploadText, { fontSize: uploadTextFontSize }]}>Choose a file</Text>
+                <Text style={[styles.uploadSubtext, { fontSize: uploadSubtextFontSize }]}>txt. docx. pdf. jpeg. Up to 50MB</Text>
                 <TouchableOpacity
-                  style={styles.browseButton}
+                  style={[styles.browseButton, { paddingHorizontal: browseButtonPaddingH, paddingVertical: browseButtonPaddingV }]}
                   onPress={handleBrowseFiles}
                   {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                  <Text style={styles.browseButtonText}>Browse files</Text>
+                  <Text style={[styles.browseButtonText, { fontSize: browseButtonFontSize }]}>Browse files</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -188,10 +220,10 @@ export default function SupportOtherScreen() {
 
         {/* Send Button */}
         <TouchableOpacity
-          style={styles.sendButton}
+          style={[styles.sendButton, { height: sendButtonHeight }]}
           onPress={handleSend}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Text style={[styles.sendButtonText, { fontSize: sendButtonFontSize }]}>Send</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -207,48 +239,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   backButton: {
-    width: 44,
-    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   headerSpacer: {
-    width: 44,
+    // width set dynamically
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 40,
     backgroundColor: '#FFFFFF',
+    // paddingHorizontal, paddingTop, paddingBottom set dynamically
   },
   inputSection: {
     marginBottom: 24,
   },
   inputLabel: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'system-ui',
     marginBottom: 8,
+    // fontSize set dynamically
   },
   textInput: {
     backgroundColor: '#F9FAFB',
@@ -257,10 +284,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontSize: 16,
     fontWeight: '400',
     color: '#111827',
     fontFamily: 'system-ui',
+    // height and fontSize set dynamically
   },
   textArea: {
     minHeight: 150,
@@ -272,45 +299,41 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
     borderStyle: 'dashed',
     borderRadius: 8,
-    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 200,
+    // padding and minHeight set dynamically
   },
   uploadIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    // width, height, borderRadius set dynamically
   },
   uploadText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'system-ui',
     marginBottom: 4,
+    // fontSize set dynamically
   },
   uploadSubtext: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
     marginBottom: 16,
+    // fontSize set dynamically
   },
   browseButton: {
     backgroundColor: '#9CA3AF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 6,
+    // paddingHorizontal and paddingVertical set dynamically
   },
   browseButtonText: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   uploadedFileContainer: {
     width: '100%',
@@ -318,37 +341,35 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   uploadedFileName: {
-    fontSize: 14,
     fontWeight: '500',
     color: '#374151',
     fontFamily: 'system-ui',
     marginTop: 8,
     maxWidth: '80%',
+    // fontSize set dynamically
   },
   removeFileButton: {
     position: 'absolute',
     top: -8,
     right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
     backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius set dynamically
   },
   sendButton: {
     width: '100%',
-    height: 52,
     backgroundColor: '#4CAF50',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+    // height set dynamically
   },
   sendButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
 });

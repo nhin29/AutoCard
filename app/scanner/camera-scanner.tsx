@@ -147,7 +147,6 @@ export default function CameraScannerScreen() {
       );
 
     } catch (error: any) {
-      console.error('[Camera] Capture error:', error);
       setIsProcessing(false);
       Alert.alert(
         'Capture Error',

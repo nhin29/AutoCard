@@ -60,10 +60,7 @@ async function transformUser(user: User | null): Promise<AuthUser | null> {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (error) {
-    // Only log actual errors, not "no rows" which maybeSingle handles gracefully
-    console.error('[Auth] Error fetching profile:', error.message);
-  }
+  // Error handled silently
 
   return {
     id: user.id,
@@ -125,7 +122,6 @@ export async function signUp(data: SignupData): Promise<AuthResult> {
     });
 
     if (authError) {
-      console.error('[Auth] Signup error:', authError.message);
       return { user: null, session: null, error: authError.message };
     }
 
@@ -163,7 +159,6 @@ export async function signUp(data: SignupData): Promise<AuthResult> {
         });
 
       if (profileError) {
-        console.error('[Auth] Manual profile creation failed:', profileError.message);
         // Don't fail signup - user exists, profile can be created later
       }
     }
@@ -177,7 +172,6 @@ export async function signUp(data: SignupData): Promise<AuthResult> {
       error: null,
     };
   } catch (error: any) {
-    console.error('[Auth] Signup exception:', error.message);
     return { user: null, session: null, error: error.message };
   }
 }
@@ -201,7 +195,6 @@ export async function signIn(email: string, password: string): Promise<AuthResul
     });
 
     if (error) {
-      console.error('[Auth] Sign in error:', error.message);
       
       // Provide user-friendly error messages
       if (error.message.includes('Invalid login credentials')) {
@@ -222,7 +215,6 @@ export async function signIn(email: string, password: string): Promise<AuthResul
       error: null,
     };
   } catch (error: any) {
-    console.error('[Auth] Sign in exception:', error.message);
     return { user: null, session: null, error: error.message };
   }
 }
@@ -239,13 +231,11 @@ export async function signOut(): Promise<{ error: string | null }> {
     const { error } = await supabase.auth.signOut();
     
     if (error) {
-      console.error('[Auth] Sign out error:', error.message);
       return { error: error.message };
     }
 
     return { error: null };
   } catch (error: any) {
-    console.error('[Auth] Sign out exception:', error.message);
     return { error: error.message };
   }
 }
@@ -256,19 +246,39 @@ export async function signOut(): Promise<{ error: string | null }> {
 
 /**
  * Get the current session
+ * 
+ * Handles invalid refresh token errors gracefully
  */
 export async function getSession(): Promise<{ session: Session | null; error: string | null }> {
   try {
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
-      console.error('[Auth] Get session error:', error.message);
+      // Handle refresh token errors
+      if (error.message.includes('Invalid Refresh Token') || 
+          error.message.includes('Refresh Token Not Found') ||
+          error.message.includes('refresh_token_not_found')) {
+        await supabase.auth.signOut().catch(() => {
+          // Ignore sign out errors
+        });
+        return { session: null, error: 'Session expired. Please sign in again.' };
+      }
+      
       return { session: null, error: error.message };
     }
 
     return { session: data.session, error: null };
   } catch (error: any) {
-    console.error('[Auth] Get session exception:', error.message);
+    // Handle refresh token errors in catch block
+    if (error?.message?.includes('Invalid Refresh Token') || 
+        error?.message?.includes('Refresh Token Not Found') ||
+        error?.message?.includes('refresh_token_not_found')) {
+      await supabase.auth.signOut().catch(() => {
+        // Ignore sign out errors
+      });
+      return { session: null, error: 'Session expired. Please sign in again.' };
+    }
+    
     return { session: null, error: error.message };
   }
 }
@@ -286,26 +296,61 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
     return transformUser(user);
   } catch (error: any) {
-    console.error('[Auth] Get current user exception:', error.message);
     return null;
   }
 }
 
 /**
  * Refresh the current session
+ * 
+ * Handles invalid refresh tokens gracefully by checking for existing session first
+ * and clearing invalid sessions when refresh token is not found
  */
 export async function refreshSession(): Promise<{ session: Session | null; error: string | null }> {
   try {
+    // First check if we have a valid session
+    const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+    
+    // If no session exists, there's nothing to refresh
+    if (!currentSession) {
+      return { session: null, error: 'No session to refresh' };
+    }
+
+    // Check if session is expired or about to expire (within 5 minutes)
+    const expiresAt = currentSession.expires_at;
+    if (expiresAt && expiresAt * 1000 > Date.now() + 5 * 60 * 1000) {
+      // Session is still valid, return it
+      return { session: currentSession, error: null };
+    }
+
+    // Attempt to refresh the session
     const { data, error } = await supabase.auth.refreshSession();
     
     if (error) {
-      console.error('[Auth] Refresh session error:', error.message);
+      // Handle specific refresh token errors
+      if (error.message.includes('Invalid Refresh Token') || 
+          error.message.includes('Refresh Token Not Found') ||
+          error.message.includes('refresh_token_not_found')) {
+        // Clear invalid session
+        await supabase.auth.signOut();
+        return { session: null, error: 'Session expired. Please sign in again.' };
+      }
+      
       return { session: null, error: error.message };
     }
 
     return { session: data.session, error: null };
   } catch (error: any) {
-    console.error('[Auth] Refresh session exception:', error.message);
+    // Handle refresh token errors in catch block as well
+    if (error?.message?.includes('Invalid Refresh Token') || 
+        error?.message?.includes('Refresh Token Not Found') ||
+        error?.message?.includes('refresh_token_not_found')) {
+      await supabase.auth.signOut().catch(() => {
+        // Ignore sign out errors
+      });
+      return { session: null, error: 'Session expired. Please sign in again.' };
+    }
+    
     return { session: null, error: error.message };
   }
 }
@@ -333,7 +378,6 @@ export async function generateOtp(
     });
 
     if (error) {
-      console.error('[Auth] Generate OTP error:', error.message);
       return { success: false, error: error.message };
     }
 
@@ -345,7 +389,6 @@ export async function generateOtp(
       error: null 
     };
   } catch (error: any) {
-    console.error('[Auth] Generate OTP exception:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -366,7 +409,6 @@ export async function verifyOtp(
     });
 
     if (error) {
-      console.error('[Auth] Verify OTP error:', error.message);
       return { success: false, error: error.message };
     }
 
@@ -376,7 +418,6 @@ export async function verifyOtp(
 
     return { success: true, error: null };
   } catch (error: any) {
-    console.error('[Auth] Verify OTP exception:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -395,13 +436,11 @@ export async function sendPasswordResetEmail(email: string): Promise<{ error: st
     });
 
     if (error) {
-      console.error('[Auth] Password reset email error:', error.message);
       return { error: error.message };
     }
 
     return { error: null };
   } catch (error: any) {
-    console.error('[Auth] Password reset email exception:', error.message);
     return { error: error.message };
   }
 }
@@ -420,13 +459,11 @@ export async function updatePassword(newPassword: string): Promise<{ error: stri
     });
 
     if (error) {
-      console.error('[Auth] Update password error:', error.message);
       return { error: error.message };
     }
 
     return { error: null };
   } catch (error: any) {
-    console.error('[Auth] Update password exception:', error.message);
     return { error: error.message };
   }
 }
@@ -475,7 +512,6 @@ export async function signInAsGuest(): Promise<AuthResult> {
     const { data, error } = await supabase.auth.signInAnonymously();
 
     if (error) {
-      console.error('[Auth] Guest sign in error:', error.message);
       return { user: null, session: null, error: error.message };
     }
 
@@ -495,7 +531,6 @@ export async function signInAsGuest(): Promise<AuthResult> {
       error: null,
     };
   } catch (error: any) {
-    console.error('[Auth] Guest sign in exception:', error.message);
     return { user: null, session: null, error: error.message };
   }
 }

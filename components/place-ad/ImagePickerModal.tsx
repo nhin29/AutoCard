@@ -1,4 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ImagePickerModalProps {
@@ -25,6 +27,24 @@ export function ImagePickerModal({
   isPicking = false,
   title = 'Select Image Source',
 }: ImagePickerModalProps) {
+  const { isSmall } = useResponsive();
+  const insets = useSafeAreaInsets();
+
+  // Calculate responsive values for small phones - reduced like EnquiryModal
+  const sheetPaddingTop = isSmall ? SPACING.xs : 12;
+  // Add safe area bottom inset to avoid system navigation bar overlap
+  const baseBottomPadding = isSmall ? SPACING.xs : 40;
+  const sheetPaddingBottom = baseBottomPadding + insets.bottom;
+  const sheetPaddingH = isSmall ? SPACING.sm : SPACING.base;
+  const handleWidth = isSmall ? 28 : 40;
+  const handleHeight = isSmall ? 3 : 4;
+  const handleMarginBottom = isSmall ? SPACING.sm : 20;
+  const titleFontSize = isSmall ? FONT_SIZES.sm : 18;
+  const titleMarginBottom = isSmall ? SPACING.sm : 20;
+  const iconSize = isSmall ? 18 : 24;
+  const optionPaddingV = isSmall ? SPACING.xs : 16;
+  const optionGap = isSmall ? SPACING.xs : 12;
+  const optionTextFontSize = isSmall ? FONT_SIZES.xs : 16;
 
   const handleTakePhoto = async () => {
     // Close modal first
@@ -68,38 +88,38 @@ export function ImagePickerModal({
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.imagePickerSheet} onStartShouldSetResponder={() => true}>
-          <View style={styles.imagePickerHandle} />
-          <Text style={styles.imagePickerTitle}>{title}</Text>
+        <View style={[styles.imagePickerSheet, { paddingTop: sheetPaddingTop, paddingBottom: sheetPaddingBottom, paddingHorizontal: sheetPaddingH }]} onStartShouldSetResponder={() => true}>
+          <View style={[styles.imagePickerHandle, { width: handleWidth, height: handleHeight, borderRadius: handleHeight / 2, marginBottom: handleMarginBottom }]} />
+          <Text style={[styles.imagePickerTitle, { fontSize: titleFontSize, marginBottom: titleMarginBottom }]}>{title}</Text>
           
           <TouchableOpacity
-            style={styles.imagePickerOption}
+            style={[styles.imagePickerOption, { paddingVertical: optionPaddingV, gap: optionGap }]}
             onPress={handleTakePhoto}
             disabled={isPicking}
             activeOpacity={0.7}
           >
-            <IconSymbol name="camera.fill" size={24} color="#000000" />
-            <Text style={styles.imagePickerOptionText}>Take Photo</Text>
+            <IconSymbol name="camera.fill" size={iconSize} color="#000000" />
+            <Text style={[styles.imagePickerOptionText, { fontSize: optionTextFontSize }]}>Take Photo</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.imagePickerOption}
+            style={[styles.imagePickerOption, { paddingVertical: optionPaddingV, gap: optionGap }]}
             onPress={handlePickFromLibrary}
             disabled={isPicking}
             activeOpacity={0.7}
           >
-            <IconSymbol name="photo.fill" size={24} color="#000000" />
-            <Text style={styles.imagePickerOptionText}>Photo Library</Text>
+            <IconSymbol name="photo.fill" size={iconSize} color="#000000" />
+            <Text style={[styles.imagePickerOptionText, { fontSize: optionTextFontSize }]}>Photo Library</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.imagePickerOption, styles.imagePickerOptionLast]}
+            style={[styles.imagePickerOption, styles.imagePickerOptionLast, { paddingVertical: optionPaddingV, gap: optionGap }]}
             onPress={handlePickFromFiles}
             disabled={isPicking}
             activeOpacity={0.7}
           >
-            <IconSymbol name="folder.fill" size={24} color="#000000" />
-            <Text style={styles.imagePickerOptionText}>Browse Files</Text>
+            <IconSymbol name="folder.fill" size={iconSize} color="#000000" />
+            <Text style={[styles.imagePickerOptionText, { fontSize: optionTextFontSize }]}>Browse Files</Text>
           </TouchableOpacity>
         </View>
       </Pressable>
@@ -117,41 +137,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
-    paddingHorizontal: 16,
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   imagePickerHandle: {
-    width: 40,
-    height: 4,
     backgroundColor: '#D1D5DB',
-    borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 20,
+    // width, height, borderRadius, marginBottom set dynamically
   },
   imagePickerTitle: {
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     fontFamily: 'system-ui',
-    marginBottom: 20,
     textAlign: 'center',
+    // fontSize and marginBottom set dynamically
   },
   imagePickerOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
-    gap: 12,
+    // paddingVertical and gap set dynamically
   },
   imagePickerOptionLast: {
     borderBottomWidth: 0,
   },
   imagePickerOptionText: {
-    fontSize: 16,
     fontWeight: '400',
     color: '#000000',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
 });

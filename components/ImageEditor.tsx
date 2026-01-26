@@ -3,7 +3,6 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   Modal,
   Platform,
@@ -11,14 +10,15 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useResponsive, SPACING } from '@/utils/responsive';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Crop area size matching the CSS specification (286px base size)
 const BASE_CROP_SIZE = 286;
-const CROP_SIZE = Math.min(BASE_CROP_SIZE, SCREEN_WIDTH - 80);
 // Grid line positions from CSS (0, 47, 94, 141, 188, 235, 286)
 const GRID_POSITIONS = [0, 47, 94, 141, 188, 235, 286];
 
@@ -34,6 +34,11 @@ interface ImageEditorProps {
  * Crop: pan and pinch to position/scale the image; the visible square is cropped on Next.
  */
 export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditorProps) {
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
+  const CROP_SIZE = Math.min(BASE_CROP_SIZE, screenWidth - 80);
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [flipH, setFlipH] = useState(false);
   const [flipV, setFlipV] = useState(false);
@@ -176,7 +181,6 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
       );
       onSave(result.uri);
     } catch (e) {
-      console.error('[ImageEditor] Error:', e);
       // Only call onSave fallback if error and imageUri exists
       if (imageUri) onSave(imageUri);
     } finally {
@@ -266,7 +270,7 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
       presentationStyle="fullScreen"
       onRequestClose={handleCancel}>
       <GestureHandlerRootView style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + (isSmall ? SPACING.md : SPACING.base) }]}>
           <TouchableOpacity style={styles.backButton} onPress={handleCancel} disabled={isProcessing}>
             <IconSymbol name="chevron.left" size={28} color="#FFFFFF" />
           </TouchableOpacity>
@@ -275,12 +279,12 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
         </View>
 
         <View style={styles.previewContainer}>
-          <View style={styles.imageWrapper}>
+          <View style={[styles.imageWrapper, { width: CROP_SIZE, height: CROP_SIZE }]}>
             {/* Crop area border */}
-            <View style={styles.cropAreaBorder} pointerEvents="none" />
+            <View style={[styles.cropAreaBorder, { width: CROP_SIZE, height: CROP_SIZE }]} pointerEvents="none" />
 
             {/* Image container with crop mask */}
-            <View style={[styles.cropBox]}>
+            <View style={[styles.cropBox, { width: CROP_SIZE, height: CROP_SIZE }]}>
               <View style={styles.gestureFill}>
                 <GestureDetector gesture={composed}>
                   <Animated.View style={[styles.imageInner, { width: W, height: H }, imageAnimatedStyle]}>
@@ -367,7 +371,7 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
           </TouchableOpacity>
         </View>
 
-        <View style={styles.bottomSection}>
+        <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <TouchableOpacity
             style={[styles.nextButton, isProcessing && styles.nextButtonDisabled]}
             onPress={handleSave}
@@ -397,7 +401,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    // paddingTop set dynamically via inline style using SafeAreaInsets
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
@@ -426,24 +430,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   imageWrapper: {
-    width: CROP_SIZE,
-    height: CROP_SIZE,
+    // Width and height set dynamically via inline styles
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cropAreaBorder: {
     position: 'absolute',
-    width: CROP_SIZE,
-    height: CROP_SIZE,
+    // Width and height set dynamically via inline styles
     zIndex: 5,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.10)',
     pointerEvents: 'none',
   },
   cropBox: {
-    width: CROP_SIZE,
-    height: CROP_SIZE,
+    // Width and height set dynamically via inline styles
     overflow: 'hidden',
     position: 'relative',
   },
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
   bottomSection: {
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    // paddingBottom set dynamically via inline style using SafeAreaInsets
     backgroundColor: '#0D1117',
   },
   nextButton: {

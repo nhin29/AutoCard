@@ -77,7 +77,6 @@ const moveDirectories = async (userInput) => {
     const layoutPath = path.join(newAppDirPath, "_layout.tsx");
     await fs.promises.writeFile(layoutPath, layoutContent);
   } catch (error) {
-    console.error(`❌ Error during script execution: ${error.message}`);
   }
 };
 

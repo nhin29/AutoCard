@@ -1,5 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING } from '@/utils/responsive';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PlaceAdHeaderProps {
   onBack: () => void;
@@ -10,8 +12,10 @@ interface PlaceAdHeaderProps {
  * Header component for Place Ad screen with back button, title, and reset button
  */
 export function PlaceAdHeader({ onBack, onReset }: PlaceAdHeaderProps) {
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + (isSmall ? SPACING.md : SPACING.base) }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={onBack}
@@ -34,7 +38,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
+    // paddingTop set dynamically via inline style using SafeAreaInsets
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,

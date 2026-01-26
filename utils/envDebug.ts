@@ -76,27 +76,7 @@ export function validateEnvVars(): {
  */
 export function logEnvStatus(showValues: boolean = false): void {
   const validation = validateEnvVars();
-  
-  console.log('=== Environment Variables Status ===');
-  console.log(`All variables set: ${validation.allSet ? '✅' : '❌'}`);
-  
-  if (validation.missing.length > 0) {
-    console.warn('Missing variables:', validation.missing.join(', '));
-  }
-  
-  console.log('\nVariable details:');
-  validation.statuses.forEach((status) => {
-    const icon = status.isSet ? '✅' : '❌';
-    const valueDisplay = showValues 
-      ? ` = ${status.value}` 
-      : status.maskedValue 
-        ? ` = ${status.maskedValue}` 
-        : ' (not set)';
-    
-    console.log(`${icon} ${status.name}${valueDisplay}`);
-  });
-  
-  console.log('====================================');
+  // Console logging removed for production
 }
 
 /**

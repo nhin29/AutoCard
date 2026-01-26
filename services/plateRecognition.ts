@@ -92,7 +92,6 @@ export async function recognizePlateFromUri(imageUri: string): Promise<PlateReco
     const responseText = await response.text();
 
     if (!response.ok) {
-      console.error('[PlateRecognizer] API error:', response.status, responseText);
       return { plateNumber: null, confidence: 0, error: `API error: ${response.status}` };
     }
 
@@ -100,13 +99,11 @@ export async function recognizePlateFromUri(imageUri: string): Promise<PlateReco
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('[PlateRecognizer] JSON parse error:', parseError);
       return { plateNumber: null, confidence: 0, error: 'Invalid API response' };
     }
 
     // Check for API errors in response
     if (data.error) {
-      console.error('[PlateRecognizer] API returned error:', data.error);
       return { plateNumber: null, confidence: 0, error: data.error };
     }
 
@@ -129,7 +126,6 @@ export async function recognizePlateFromUri(imageUri: string): Promise<PlateReco
     return { plateNumber: null, confidence: 0 };
 
   } catch (error: any) {
-    console.error('[PlateRecognizer] Error:', error.message || error);
     return { plateNumber: null, confidence: 0, error: error.message || 'Unknown error' };
   }
 }

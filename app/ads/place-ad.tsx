@@ -268,7 +268,6 @@ export default function PlaceAdScreen() {
         const result = await adService.getAdById(params.adId);
         
         if (result.error || !result.ad) {
-          console.error('[PlaceAd] Error loading ad for edit:', result.error);
           Alert.alert('Error', 'Failed to load ad. Please try again.');
           router.back();
           return;
@@ -305,7 +304,6 @@ export default function PlaceAdScreen() {
         setVanYearOfProduction(convertedAd.vanYearOfProduction || '');
         setLoadCapacity(convertedAd.loadCapacity || '');
       } catch (error) {
-        console.error('[PlaceAd] Exception loading ad for edit:', error);
         Alert.alert('Error', 'Failed to load ad. Please try again.');
         router.back();
       } finally {
@@ -655,7 +653,6 @@ export default function PlaceAdScreen() {
         if (newImages.length > 0) {
           const uploadResult = await adService.uploadAdImages(newImages, user.id, params.adId);
           if (uploadResult.errors.length > 0) {
-            console.error('[PlaceAd] Image upload failed:', uploadResult.errors);
             Alert.alert('Error', `Failed to upload images: ${uploadResult.errors.join(', ')}`);
             setIsPublishing(false);
             return;
@@ -666,7 +663,6 @@ export default function PlaceAdScreen() {
         if (newStories.length > 0) {
           const uploadResult = await adService.uploadAdStories(newStories, user.id, params.adId);
           if (uploadResult.errors.length > 0) {
-            console.error('[PlaceAd] Story upload failed:', uploadResult.errors);
             Alert.alert('Error', `Failed to upload stories: ${uploadResult.errors.join(', ')}`);
             setIsPublishing(false);
             return;
@@ -700,7 +696,6 @@ export default function PlaceAdScreen() {
         const updateResult = await adService.updateAd(params.adId, updateData);
         
         if (updateResult.error) {
-          console.error('[PlaceAd] Ad update failed:', updateResult.error);
           Alert.alert(
             'Error',
             `Failed to update ad: ${updateResult.error}`,
@@ -748,7 +743,6 @@ export default function PlaceAdScreen() {
         const result = await adService.createAd(adFormData, user.id);
         
         if (result.error) {
-          console.error('[PlaceAd] Ad creation failed:', result.error);
           Alert.alert(
             'Error',
             `Failed to create ad: ${result.error}`,
@@ -794,7 +788,6 @@ export default function PlaceAdScreen() {
         );
       }
     } catch (error: any) {
-      console.error('[PlaceAd] Exception creating ad:', error);
       Alert.alert(
         'Error',
         `An unexpected error occurred: ${error?.message || 'Unknown error'}`,

@@ -1,4 +1,5 @@
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
+import { useResponsive, getResponsiveFontSize } from '@/utils/responsive';
 
 /**
  * Reusable Onboarding Content Component
@@ -22,15 +23,52 @@ export function OnboardingContent({
   description,
   children,
 }: OnboardingContentProps) {
+  const { width } = useWindowDimensions();
+  const { isSmall, isMedium } = useResponsive();
+  
+  // Calculate responsive sizes
+  const dotSize = isSmall ? 5 : 6; // 5-7px as per image
+  const titleFontSize = isSmall ? 22 : isMedium ? 24 : 26; // 24-28px as per image
+  const descriptionFontSize = isSmall ? 14 : 15; // 14-16px as per image
+  const buttonFontSize = isSmall ? 14 : 16; // Reduced on small phones
+  const horizontalPadding = isSmall ? 20 : 24;
+  // Text should use full width with padding, not centered with max-width
+  const gapBetweenElements = isSmall ? 14 : 18;
+  const buttonGap = isSmall ? 10 : 12;
+  const buttonHeight = isSmall ? 44 : 52; // Reduced height on small phones
+  const dotsToTitleGap = isSmall ? 12 : 16; // Spacing between dots and title
+  const titleToDescriptionGap = isSmall ? 12 : 16; // Spacing between title and description
+  const descriptionToButtonsGap = isSmall ? 16 : 20; // Spacing between description and buttons
+  
+  const titleLineHeight = titleFontSize * 1.25; // 25% line height for title
+  const descriptionLineHeight = descriptionFontSize * 1.4; // 40% line height for description
+  
+  const titleStyle = {
+    ...styles.title,
+    lineHeight: titleLineHeight,
+    ...getResponsiveFontSize(titleFontSize, 1.2),
+  };
+  
+  const descriptionStyle = {
+    ...styles.description,
+    lineHeight: descriptionLineHeight,
+    ...getResponsiveFontSize(descriptionFontSize, 1.2),
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingHorizontal: horizontalPadding }]}>
       {/* Navigation Dots */}
-      <View style={styles.dotsContainer}>
+      <View style={[styles.dotsContainer, { marginBottom: dotsToTitleGap }]}>
         {[0, 1, 2].map((index) => (
           <View
             key={index}
             style={[
               styles.dot,
+              {
+                width: dotSize,
+                height: dotSize,
+                borderRadius: dotSize / 2,
+              },
               index === activeDotIndex && styles.dotActive,
             ]}
           />
@@ -38,65 +76,59 @@ export function OnboardingContent({
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[titleStyle, { marginBottom: titleToDescriptionGap }]}>{title}</Text>
 
       {/* Description */}
-      <Text style={styles.description}>{description}</Text>
+      <Text style={[descriptionStyle, { marginBottom: descriptionToButtonsGap }]}>{description}</Text>
 
       {/* Action Buttons */}
-      {children && <View style={styles.buttonsContainer}>{children}</View>}
+      {children && (
+        <View style={[styles.buttonsContainer, { gap: buttonGap }]}>
+          {children}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 0,
     paddingTop: 0,
-    gap: 24,
-    alignItems: 'center',
+    alignItems: 'center', // Center all content horizontally
   },
   dotsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: 'center', // Dots remain centered
+    gap: 6,
+    alignSelf: 'center', // Center the dots container itself
+    width: '100%',
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
     backgroundColor: '#E0E0E0',
   },
   dotActive: {
     backgroundColor: '#4CAF50',
   },
   title: {
-    width: 335,
-    height: 30,
     fontFamily: 'Source Sans Pro',
     fontWeight: '600',
-    fontSize: 24,
-    lineHeight: 30,
-    textAlign: 'center',
-    color: '#030712', // gray/950
-    alignSelf: 'center',
+    lineHeight: undefined, // Let it calculate based on fontSize
+    textAlign: 'center', // Center the text horizontally
+    color: '#030712',
+    alignSelf: 'stretch', // Use full width with padding
   },
   description: {
-    width: 335,
-    height: 40,
     fontFamily: 'Source Sans Pro',
     fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 20,
-    textAlign: 'center',
-    color: '#374151', // gray/700
-    alignSelf: 'center',
+    lineHeight: undefined, // Let it calculate based on fontSize
+    textAlign: 'center', // Center the text horizontally
+    color: '#374151',
+    alignSelf: 'stretch', // Use full width with padding
   },
   buttonsContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 32, // Increased space between content and buttons
+    width: '100%',
+    marginTop: 0, // Spacing handled by descriptionToButtonsGap
   },
 });

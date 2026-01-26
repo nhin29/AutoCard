@@ -1,8 +1,11 @@
+import { SignupHeader } from '@/components/auth/SignupHeader';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type AccountType = 'trade' | 'private' | 'brand' | 'guest';
 
@@ -85,10 +88,29 @@ const ACCOUNT_TYPE_INFO = {
 export default function SignUpStep2Screen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ type: AccountType }>();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const [selectedAccountType, setSelectedAccountType] = useState<AccountType>('trade'); // Auto-select Trade Seller
   
   const accountInfo = ACCOUNT_TYPE_INFO[selectedAccountType];
   const features = ACCOUNT_FEATURES[selectedAccountType] || [];
+
+  // Calculate responsive values - reduced for small phones with safe area insets
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.lg;
+  const horizontalPaddingWithInsets = Math.max(horizontalPadding, insets.left, insets.right);
+  const bottomPadding = Math.max(insets.bottom, isSmall ? SPACING.base : SPACING.xl);
+  const titleFontSize = isSmall ? FONT_SIZES.lg : FONT_SIZES['2xl'];
+  const buttonHeight = isSmall ? 42 : 48;
+  const titleMarginBottom = isSmall ? SPACING.sm : SPACING.lg;
+  const optionsGap = isSmall ? SPACING.xs : SPACING.md;
+  const optionCardHeight = isSmall ? 56 : 68;
+  const optionCardPadding = isSmall ? SPACING.sm : SPACING.base;
+  const iconSize = isSmall ? 24 : 32;
+  const radioButtonSize = isSmall ? 16 : 20;
+  const radioButtonInnerSize = isSmall ? 6 : 10;
+  const featureIconSize = isSmall ? 16 : 20;
+  const tradeCardMinHeight = isSmall ? 280 : 394;
+  const featureTextFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.base;
 
   const handleBack = () => {
     router.back();
@@ -119,56 +141,62 @@ export default function SignUpStep2Screen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <StatusBar style="dark" />
 
       {/* Header: Back Button + Logo */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={20} color="#000000" />
-        </TouchableOpacity>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/auth-logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
-        <View style={styles.headerSpacer} />
-      </View>
+      <SignupHeader showBackButton showLogo onBack={handleBack} />
 
-      {/* Title */}
-      <Text style={styles.title}>Select Your Account Type</Text>
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
+        {/* Title */}
+        <Text style={[
+          styles.title,
+          { fontSize: titleFontSize, marginBottom: titleMarginBottom, paddingHorizontal: horizontalPaddingWithInsets }
+        ]}>Select Your Account Type</Text>
 
-      {/* Account Type Options */}
-      <View style={styles.optionsContainer}>
+        {/* Account Type Options */}
+        <View style={[styles.optionsContainer, { gap: optionsGap, paddingHorizontal: horizontalPaddingWithInsets }]}>
           {/* Guest Option */}
           <TouchableOpacity
-            style={styles.optionCard}
+            style={[
+              styles.optionCard,
+              { height: optionCardHeight, padding: optionCardPadding }
+            ]}
             onPress={() => handleAccountTypeSelect('guest')}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             <View style={styles.optionCardContent}>
-              <View style={styles.optionIconContainer}>
+              <View style={[styles.optionIconContainer, { width: iconSize, height: iconSize }]}>
                 <Image
                   source={ACCOUNT_TYPE_INFO.guest.icon}
-                  style={styles.accountIcon}
+                  style={[styles.accountIcon, { width: iconSize, height: iconSize }]}
                   resizeMode="contain"
                 />
               </View>
               <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>
+                <Text style={[styles.optionTitle, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>
                   {ACCOUNT_TYPE_INFO.guest.title}
                 </Text>
-                <Text style={styles.optionDescription}>
+                <Text style={[styles.optionDescription, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>
                   {ACCOUNT_TYPE_INFO.guest.description}
                 </Text>
               </View>
-              <View style={styles.radioButtonContainer}>
-                <View style={selectedAccountType === 'guest' ? styles.radioButtonSelected : styles.radioButton}>
-                  {selectedAccountType === 'guest' && <View style={styles.radioButtonInner} />}
+              <View style={[styles.radioButtonContainer, { width: radioButtonSize, height: radioButtonSize }]}>
+                <View style={[
+                  selectedAccountType === 'guest' ? styles.radioButtonSelected : styles.radioButton,
+                  { width: radioButtonSize, height: radioButtonSize, borderRadius: radioButtonSize / 2 }
+                ]}>
+                  {selectedAccountType === 'guest' && <View style={[
+                    styles.radioButtonInner,
+                    { width: radioButtonInnerSize, height: radioButtonInnerSize, borderRadius: radioButtonInnerSize / 2 }
+                  ]} />}
                 </View>
               </View>
             </View>
@@ -178,29 +206,39 @@ export default function SignUpStep2Screen() {
           <TouchableOpacity
             style={[
               styles.tradeSellerCard,
+              {
+                minHeight: tradeCardMinHeight,
+                padding: optionCardPadding,
+              },
               selectedAccountType === 'trade' && styles.selectedCard,
             ]}
             onPress={() => handleAccountTypeSelect('trade')}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             <View style={styles.optionCardContent}>
-              <View style={styles.optionIconContainer}>
+              <View style={[styles.optionIconContainer, { width: iconSize, height: iconSize }]}>
                 <Image
                   source={ACCOUNT_TYPE_INFO.trade.icon}
-                  style={styles.accountIcon}
+                  style={[styles.accountIcon, { width: iconSize, height: iconSize }]}
                   resizeMode="contain"
                 />
               </View>
               <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>
+                <Text style={[styles.optionTitle, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>
                   {ACCOUNT_TYPE_INFO.trade.title}
                 </Text>
-                <Text style={styles.optionDescription}>
+                <Text style={[styles.optionDescription, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>
                   {ACCOUNT_TYPE_INFO.trade.description}
                 </Text>
               </View>
-              <View style={styles.radioButtonContainer}>
-                <View style={selectedAccountType === 'trade' ? styles.radioButtonSelected : styles.radioButton}>
-                  {selectedAccountType === 'trade' && <View style={styles.radioButtonInner} />}
+              <View style={[styles.radioButtonContainer, { width: radioButtonSize, height: radioButtonSize }]}>
+                <View style={[
+                  selectedAccountType === 'trade' ? styles.radioButtonSelected : styles.radioButton,
+                  { width: radioButtonSize, height: radioButtonSize, borderRadius: radioButtonSize / 2 }
+                ]}>
+                  {selectedAccountType === 'trade' && <View style={[
+                    styles.radioButtonInner,
+                    { width: radioButtonInnerSize, height: radioButtonInnerSize, borderRadius: radioButtonInnerSize / 2 }
+                  ]} />}
                 </View>
               </View>
             </View>
@@ -219,15 +257,15 @@ export default function SignUpStep2Screen() {
                   
                   return (
                     <View key={index} style={styles.featureItem}>
-                      <View style={styles.featureIconContainer}>
+                      <View style={[styles.featureIconContainer, { width: featureIconSize, height: featureIconSize }]}>
                         <IconSymbol 
                           name={feature.icon} 
-                          size={20} 
+                          size={featureIconSize} 
                           color={iconColor}
                         />
                       </View>
                       <View style={styles.featureTextContainer}>
-                        <Text style={styles.featureText}>
+                        <Text style={[styles.featureText, { fontSize: featureTextFontSize }]}>
                           {feature.title} {feature.description}
                         </Text>
                       </View>
@@ -238,28 +276,36 @@ export default function SignUpStep2Screen() {
             )}
           </TouchableOpacity>
         </View>
+      </ScrollView>
 
       {/* Bottom Section - Fixed at bottom */}
-      <View style={styles.bottomSection}>
+      <View style={[
+        styles.bottomSection,
+        {
+          paddingHorizontal: horizontalPaddingWithInsets,
+          paddingBottom: bottomPadding,
+          paddingTop: isSmall ? SPACING.md : SPACING.lg,
+        }
+      ]}>
         {/* Continue Button */}
         <TouchableOpacity
-          style={styles.continueButton}
+          style={[styles.continueButton, { height: buttonHeight }]}
           onPress={handleContinue}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={[styles.continueButtonText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Continue</Text>
         </TouchableOpacity>
 
         {/* Login Link */}
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginPrompt}>Already have an account?</Text>
+        <View style={[styles.loginContainer, { marginTop: isSmall ? SPACING.sm : SPACING.lg }]}>
+          <Text style={[styles.loginPrompt, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Already have an account?</Text>
           <TouchableOpacity
             onPress={handleLogin}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.loginLink}>Login</Text>
+            <Text style={[styles.loginLink, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Login</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -267,62 +313,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingTop: 50,
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 20 : 20,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -8,
-    ...(Platform.OS === 'web' && { cursor: 'pointer' }),
-  },
-  logoContainer: {
+  scrollView: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  logoImage: {
-    width: 200,
-    height: 60,
-  },
-  headerSpacer: {
-    width: 40,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: SPACING.lg,
   },
   title: {
-    fontSize: 24,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 16,
     fontFamily: 'system-ui',
   },
   optionsContainer: {
     width: '100%',
     alignItems: 'center',
-    gap: 12,
-    flexShrink: 1,
+    flexShrink: 0,
   },
   optionCard: {
     width: '100%',
     maxWidth: 380,
-    minHeight: 68,
     backgroundColor: '#F3F4F6', // gray/100 - unselected
     borderWidth: 1,
     borderColor: '#E5E7EB', // gray/200
     borderRadius: 8,
-    padding: 16,
-    gap: 16,
+    gap: SPACING.base,
     flexDirection: 'column',
     alignItems: 'center',
     alignSelf: 'center',
@@ -332,79 +349,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
-    gap: 12,
+    gap: SPACING.md,
     width: '100%',
-    height: 36,
   },
   optionIconContainer: {
-    width: 32,
-    height: 32,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   accountIcon: {
-    width: 32,
-    height: 32,
+    // Width and height are set dynamically
   },
   optionTextContainer: {
     flexDirection: 'column',
     alignItems: 'flex-start',
     padding: 0,
-    gap: 4,
+    gap: SPACING.xs,
     flex: 1,
-    height: 36,
   },
   optionTitle: {
     fontFamily: 'Source Sans Pro',
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: FONT_SIZES.sm,
     lineHeight: 16,
     color: '#6B7280', // gray/500
   },
   optionDescription: {
     fontFamily: 'Source Sans Pro',
     fontWeight: '400',
-    fontSize: 12,
+    fontSize: FONT_SIZES.sm,
     lineHeight: 16,
     color: '#111827', // gray/900
   },
   tradeSellerCard: {
     width: '100%',
     maxWidth: 380,
-    height: 394, // Always expanded height to show all features
     backgroundColor: '#F3F4F6', // gray/100 - default background
     borderWidth: 1,
     borderColor: '#E5E7EB', // gray/200 - default border
     borderRadius: 8,
-    padding: 16,
-    gap: 16,
+    gap: SPACING.base,
     flexDirection: 'column',
     alignItems: 'flex-start',
     alignSelf: 'center',
+    flexShrink: 0,
   },
   selectedCard: {
     backgroundColor: '#DCFCE7', // green/100 - when selected
     borderColor: '#BBF7D0', // green/200 - when selected
   },
   radioButtonContainer: {
-    width: 20,
-    height: 20,
     flexShrink: 0,
   },
   radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
     borderWidth: 2,
     borderColor: '#9CA3AF', // Gray border for unselected
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioButtonSelected: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
     borderWidth: 2,
     borderColor: '#166534', // Dark green outer ring (green/800)
     alignItems: 'center',
@@ -412,29 +415,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#DCFCE7', // Light green background (green/100)
   },
   radioButtonInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
     backgroundColor: '#166534', // Dark green inner circle (green/800)
   },
   featuresContainer: {
     width: '100%',
-    height: 310,
     flexDirection: 'column',
     alignItems: 'flex-start',
     padding: 0,
-    gap: 8,
+    gap: SPACING.sm,
     alignSelf: 'stretch',
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: SPACING.md,
     width: '100%',
   },
   featureIconContainer: {
-    width: 20,
-    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -448,27 +445,22 @@ const styles = StyleSheet.create({
     width: '100%',
     fontFamily: 'Source Sans Pro',
     fontWeight: '600',
-    fontSize: 14,
     lineHeight: 18,
     color: '#166534', // green/800
     alignSelf: 'stretch',
+    flexShrink: 1,
   },
   bottomSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 20,
     backgroundColor: '#FFFFFF',
   },
   continueButton: {
     width: '100%',
-    height: 48,
     backgroundColor: '#4CAF50', // Green
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
@@ -477,17 +469,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
-    gap: 4,
+    gap: SPACING.xs,
   },
   loginPrompt: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#9CA3AF', // Light grey
     fontFamily: 'system-ui',
   },
   loginLink: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50', // Green
     fontFamily: 'system-ui',

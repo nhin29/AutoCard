@@ -1,9 +1,11 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { authService } from '@/services/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SidebarProps {
   visible: boolean;
@@ -17,11 +19,42 @@ interface SidebarProps {
  */
 export function Sidebar({ visible, onClose }: SidebarProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
   const { user, logout } = useAuthStore();
   const accountType = user?.profile?.account_type || 'private';
-  const slideAnim = useRef(new Animated.Value(-300)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Calculate responsive values - reduced for small phones
+  const sidebarWidth = isSmall ? '75%' : '70%';
+  const sidebarMaxWidth = isSmall ? 280 : 300;
+  const sidebarActualWidth = Math.min(screenWidth * (isSmall ? 0.75 : 0.7), sidebarMaxWidth);
+  const slideAnim = useRef(new Animated.Value(-sidebarActualWidth)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const sidebarPaddingTop = Math.max(insets.top + (isSmall ? SPACING.base : SPACING.md), isSmall ? 40 : (Platform.OS === 'ios' ? 50 : 40));
+  const sidebarPaddingH = isSmall ? SPACING.sm : SPACING.base;
+  const sidebarPaddingBottom = isSmall ? SPACING.md : 20;
+  const closeButtonSize = isSmall ? 24 : 28;
+  const closeButtonIconSize = isSmall ? 16 : 20;
+  const menuItemIconSize = isSmall ? 16 : 18;
+  const menuItemTextSize = isSmall ? FONT_SIZES.sm : 14;
+  const menuItemPaddingV = isSmall ? 6 : 8;
+  const menuItemGap = isSmall ? 8 : 10;
+  const infoIconSize = isSmall ? 16 : 18;
+  const infoIconTextSize = isSmall ? 10 : 11;
+  const socialSectionTitleSize = isSmall ? 11 : 12;
+  const socialIconSize = isSmall ? 18 : 20;
+  const socialIconInnerSize = isSmall ? 10 : 12;
+  const socialIconTextSize = isSmall ? 9 : 10;
+  const socialLinkTextSize = isSmall ? FONT_SIZES.sm : 13;
+  const socialLinkPaddingV = isSmall ? 5 : 6;
+  const toggleLabelSize = isSmall ? FONT_SIZES.sm : 13;
+  const toggleWidth = isSmall ? 40 : 44;
+  const toggleHeight = isSmall ? 24 : 26;
+  const toggleThumbSize = isSmall ? 20 : 22;
+  const actionButtonTextSize = isSmall ? FONT_SIZES.sm : 14;
+  const actionButtonIconSize = isSmall ? 16 : 18;
+  const actionButtonGap = isSmall ? 8 : 10;
 
   useEffect(() => {
     if (visible) {
@@ -40,7 +73,7 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, {
-          toValue: -300,
+          toValue: -sidebarActualWidth,
           duration: 300,
           useNativeDriver: true,
         }),
@@ -71,7 +104,6 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
       // Navigate to login
       router.replace('/auth/signin');
     } catch (error) {
-      console.error('[Sidebar] Logout error:', error);
     }
   };
 
@@ -134,15 +166,20 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
           style={[
             styles.sidebar,
             {
+              width: sidebarWidth,
+              maxWidth: sidebarMaxWidth,
+              paddingTop: sidebarPaddingTop,
+              paddingHorizontal: sidebarPaddingH,
+              paddingBottom: sidebarPaddingBottom,
               transform: [{ translateX: slideAnim }],
             },
           ]}>
         {/* Close Button */}
         <TouchableOpacity
-          style={styles.closeButton}
+          style={[styles.closeButton, { width: closeButtonSize, height: closeButtonSize, borderRadius: closeButtonSize / 2 }]}
           onPress={onClose}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="xmark" size={20} color="#000000" />
+          <IconSymbol name="xmark" size={closeButtonIconSize} color="#000000" />
         </TouchableOpacity>
 
         {/* Scrollable Content */}
@@ -153,154 +190,154 @@ export function Sidebar({ visible, onClose }: SidebarProps) {
           {/* Menu Items */}
           <View style={styles.menuSection}>
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={handleEditProfile}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="pencil" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Edit Profile</Text>
+              <IconSymbol name="pencil" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Edit Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('ads-management')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="slider.horizontal.3" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Ads Managements</Text>
+              <IconSymbol name="slider.horizontal.3" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Ads Managements</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('viewed-ads')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="eye.fill" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Viewed Ads</Text>
+              <IconSymbol name="eye.fill" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Viewed Ads</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('likes')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="heart.fill" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Likes</Text>
+              <IconSymbol name="heart.fill" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Likes</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('about')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={styles.infoIcon}>
-                <Text style={styles.infoIconText}>i</Text>
+              <View style={[styles.infoIcon, { width: infoIconSize, height: infoIconSize, borderRadius: infoIconSize / 2 }]}>
+                <Text style={[styles.infoIconText, { fontSize: infoIconTextSize }]}>i</Text>
               </View>
-              <Text style={styles.menuItemText}>About</Text>
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>About</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('terms')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="creditcard.fill" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Terms of Service</Text>
+              <IconSymbol name="creditcard.fill" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Terms of Service</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('privacy')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="shield.checkmark" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Privacy Policy</Text>
+              <IconSymbol name="shield.checkmark" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Privacy Policy</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('support')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="message.fill" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Support</Text>
+              <IconSymbol name="message.fill" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Support</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, { paddingVertical: menuItemPaddingV, gap: menuItemGap }]}
               onPress={() => handleMenuItem('purchase-history')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="creditcard.fill" size={18} color="#1F2937" />
-              <Text style={styles.menuItemText}>Purchase History</Text>
+              <IconSymbol name="creditcard.fill" size={menuItemIconSize} color="#1F2937" />
+              <Text style={[styles.menuItemText, { fontSize: menuItemTextSize }]}>Purchase History</Text>
             </TouchableOpacity>
           </View>
 
           {/* Follow us on Section */}
           <View style={styles.socialSection}>
-            <Text style={styles.socialSectionTitle}>Follow us on</Text>
+            <Text style={[styles.socialSectionTitle, { fontSize: socialSectionTitleSize }]}>Follow us on</Text>
             <View style={styles.socialLinks}>
               <TouchableOpacity
-                style={styles.socialLink}
+                style={[styles.socialLink, { paddingVertical: socialLinkPaddingV, gap: menuItemGap }]}
                 onPress={() => handleMenuItem('autocart-website')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <IconSymbol name="house.fill" size={18} color="#1F2937" />
-                <Text style={styles.socialLinkText}>AutoCart.ie</Text>
+                <IconSymbol name="house.fill" size={menuItemIconSize} color="#1F2937" />
+                <Text style={[styles.socialLinkText, { fontSize: socialLinkTextSize }]}>AutoCart.ie</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.socialLink}
+                style={[styles.socialLink, { paddingVertical: socialLinkPaddingV, gap: menuItemGap }]}
                 onPress={() => handleMenuItem('facebook')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <View style={[styles.socialIcon, styles.facebookIcon]}>
-                  <Text style={styles.socialIconText}>f</Text>
+                <View style={[styles.socialIcon, styles.facebookIcon, { width: socialIconSize, height: socialIconSize }]}>
+                  <Text style={[styles.socialIconText, { fontSize: socialIconTextSize }]}>f</Text>
                 </View>
-                <Text style={styles.socialLinkText}>Facebook</Text>
+                <Text style={[styles.socialLinkText, { fontSize: socialLinkTextSize }]}>Facebook</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.socialLink}
+                style={[styles.socialLink, { paddingVertical: socialLinkPaddingV, gap: menuItemGap }]}
                 onPress={() => handleMenuItem('instagram')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <View style={[styles.socialIcon, styles.instagramIcon]}>
-                  <IconSymbol name="camera.fill" size={12} color="#FFFFFF" />
+                <View style={[styles.socialIcon, styles.instagramIcon, { width: socialIconSize, height: socialIconSize }]}>
+                  <IconSymbol name="camera.fill" size={socialIconInnerSize} color="#FFFFFF" />
                 </View>
-                <Text style={styles.socialLinkText}>Instagram</Text>
+                <Text style={[styles.socialLinkText, { fontSize: socialLinkTextSize }]}>Instagram</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.socialLink}
+                style={[styles.socialLink, { paddingVertical: socialLinkPaddingV, gap: menuItemGap }]}
                 onPress={() => handleMenuItem('tiktok')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <View style={[styles.socialIcon, styles.tiktokIcon]}>
-                  <Text style={styles.socialIconText}>T</Text>
+                <View style={[styles.socialIcon, styles.tiktokIcon, { width: socialIconSize, height: socialIconSize }]}>
+                  <Text style={[styles.socialIconText, { fontSize: socialIconTextSize }]}>T</Text>
                 </View>
-                <Text style={styles.socialLinkText}>TikTok</Text>
+                <Text style={[styles.socialLinkText, { fontSize: socialLinkTextSize }]}>TikTok</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Seller Type Toggle */}
           <View style={styles.toggleSection}>
-            <Text style={styles.toggleLabel}>Private Seller</Text>
+            <Text style={[styles.toggleLabel, { fontSize: toggleLabelSize }]}>Private Seller</Text>
             <TouchableOpacity
-              style={[styles.toggle, accountType === 'trade' && styles.toggleActive]}
+              style={[styles.toggle, { width: toggleWidth, height: toggleHeight, borderRadius: toggleHeight / 2 }, accountType === 'trade' && styles.toggleActive]}
               onPress={handleToggleSellerType}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={[styles.toggleThumb, accountType === 'trade' && styles.toggleThumbActive]} />
+              <View style={[styles.toggleThumb, { width: toggleThumbSize, height: toggleThumbSize, borderRadius: toggleThumbSize / 2 }, accountType === 'trade' && styles.toggleThumbActive]} />
             </TouchableOpacity>
-            <Text style={styles.toggleLabel}>Trade Seller</Text>
+            <Text style={[styles.toggleLabel, { fontSize: toggleLabelSize }]}>Trade Seller</Text>
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionsSection}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { gap: actionButtonGap }]}
               onPress={handleDeleteAccount}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="trash.fill" size={18} color="#EF4444" />
-              <Text style={styles.actionButtonText}>Delete Account</Text>
+              <IconSymbol name="trash.fill" size={actionButtonIconSize} color="#EF4444" />
+              <Text style={[styles.actionButtonText, { fontSize: actionButtonTextSize }]}>Delete Account</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { gap: actionButtonGap }]}
               onPress={handleLogout}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={styles.logoutIcon}>
-                <IconSymbol name="chevron.right" size={14} color="#EF4444" />
+              <View style={[styles.logoutIcon, { width: actionButtonIconSize, height: actionButtonIconSize }]}>
+                <IconSymbol name="chevron.right" size={isSmall ? 12 : 14} color="#EF4444" />
               </View>
-              <Text style={styles.actionButtonText}>Log out</Text>
+              <Text style={[styles.actionButtonText, { fontSize: actionButtonTextSize }]}>Log out</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -363,19 +400,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sidebar: {
-    width: '70%',
-    maxWidth: 300,
     backgroundColor: '#FFFFFF',
     borderTopRightRadius: 20,
     borderBottomRightRadius: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
     shadowColor: '#000000',
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 8,
+    // width, maxWidth, paddingTop, paddingHorizontal, paddingBottom set dynamically
   },
   scrollContent: {
     flex: 1,
@@ -384,14 +417,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   closeButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
     alignSelf: 'flex-start',
+    // width, height, borderRadius set dynamically
   },
   menuSection: {
     marginBottom: 16,
@@ -399,29 +430,26 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    gap: 10,
+    // paddingVertical and gap set dynamically
   },
   menuItemText: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#1F2937',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   infoIcon: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
     borderWidth: 1.5,
     borderColor: '#1F2937',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius set dynamically
   },
   infoIconText: {
-    fontSize: 11,
     fontWeight: '700',
     color: '#1F2937',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   socialSection: {
     marginBottom: 16,
@@ -430,11 +458,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#E5E7EB',
   },
   socialSectionTitle: {
-    fontSize: 12,
     fontWeight: '600',
     color: '#6B7280',
     fontFamily: 'system-ui',
     marginBottom: 10,
+    // fontSize set dynamically
   },
   socialLinks: {
     gap: 8,
@@ -442,15 +470,13 @@ const styles = StyleSheet.create({
   socialLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
+    // gap and paddingVertical set dynamically
   },
   socialIcon: {
-    width: 20,
-    height: 20,
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   facebookIcon: {
     backgroundColor: '#1877F2',
@@ -462,16 +488,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   socialIconText: {
-    fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   socialLinkText: {
-    fontSize: 13,
     fontWeight: '400',
     color: '#1F2937',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   toggleSection: {
     flexDirection: 'row',
@@ -483,28 +509,24 @@ const styles = StyleSheet.create({
     borderTopColor: '#E5E7EB',
   },
   toggleLabel: {
-    fontSize: 13,
     fontWeight: '500',
     color: '#1F2937',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   toggle: {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
     backgroundColor: '#D1D5DB',
     justifyContent: 'center',
     paddingHorizontal: 2,
+    // width, height, borderRadius set dynamically
   },
   toggleActive: {
     backgroundColor: '#4CAF50',
   },
   toggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
     backgroundColor: '#FFFFFF',
     alignSelf: 'flex-start',
+    // width, height, borderRadius set dynamically
   },
   toggleThumbActive: {
     alignSelf: 'flex-end',
@@ -518,20 +540,19 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
     paddingVertical: 8,
+    // gap set dynamically
   },
   logoutIcon: {
-    width: 18,
-    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   actionButtonText: {
-    fontSize: 14,
     fontWeight: '500',
     color: '#EF4444',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   // Logout Modal Styles
   modalOverlay: {

@@ -19,8 +19,9 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useResponsive, SPACING } from '@/utils/responsive';
 import {
-    Dimensions,
     FlatList,
     Image,
     NativeScrollEvent,
@@ -30,10 +31,9 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    useWindowDimensions
 } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 
 /**
@@ -66,7 +66,10 @@ const formatNumber = (num: number): string => {
  * showing how it will appear to other users.
  */
 export default function PreviewAdScreen() {
+  const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const params = useLocalSearchParams<{ adData?: string }>();
   const { user } = useAuthStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -226,7 +229,7 @@ export default function PreviewAdScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + (isSmall ? SPACING.md : SPACING.base) }]}>
         <TouchableOpacity
           style={styles.backButtonHeader}
           onPress={handleBack}
@@ -267,8 +270,8 @@ export default function PreviewAdScreen() {
               scrollEventThrottle={16}
               onScrollToIndexFailed={handleScrollToIndexFailed}
               getItemLayout={(_, index) => ({
-                length: SCREEN_WIDTH,
-                offset: SCREEN_WIDTH * index,
+                length: screenWidth,
+                offset: screenWidth * index,
                 index,
               })}
               renderItem={({ item }) => (
@@ -279,7 +282,7 @@ export default function PreviewAdScreen() {
                 />
               )}
               decelerationRate="fast"
-              snapToInterval={SCREEN_WIDTH}
+              snapToInterval={screenWidth}
               snapToAlignment="start"
             />
           ) : (
@@ -519,7 +522,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
+    // paddingTop set dynamically via inline style using SafeAreaInsets
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
@@ -554,7 +557,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   heroImage: {
-    width: SCREEN_WIDTH,
+    width: '100%',
     height: 300,
   },
   heroImagePlaceholder: {

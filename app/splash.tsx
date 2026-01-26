@@ -1,16 +1,15 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, ActivityIndicator, Dimensions } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { SPLASH_SCREEN_SPECS } from '@/utils/figma-design-specs';
 
 // Keep the native splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 /**
  * Splash Screen Component
@@ -24,6 +23,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
  */
 export default function SplashScreenComponent() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function SplashScreenComponent() {
         // In production, load fonts, images, and other assets here
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (e) {
-        console.warn('Error preparing splash screen:', e);
+        // Error preparing splash screen handled silently
       } finally {
         setIsReady(true);
         await SplashScreen.hideAsync();
@@ -57,7 +57,11 @@ export default function SplashScreenComponent() {
   const specs = SPLASH_SCREEN_SPECS;
 
   return (
-    <View style={[styles.container, { backgroundColor: specs.backgroundColor }]}>
+    <LinearGradient
+      colors={['#CBD5E1', 'rgba(255, 255, 255, 0)']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}>
       <StatusBar style="auto" />
       
       {/* Main Content Container */}
@@ -83,17 +87,18 @@ export default function SplashScreenComponent() {
           style={[styles.loader, { marginTop: specs.spacing.loaderTopMargin }]}
         />
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    // Background gradient applied via LinearGradient component
   },
   contentContainer: {
     alignItems: 'center',

@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -58,7 +59,6 @@ export default function RootLayout() {
           logout();
         }
       } catch (error) {
-        console.error('[RootLayout] Auth initialization error:', error);
         logout();
       } finally {
         setLoading(false);
@@ -69,28 +69,38 @@ export default function RootLayout() {
 
     // Subscribe to auth state changes
     const unsubscribe = authService.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const user = await authService.getCurrentUser();
-        if (user) {
-          setUser(user);
+      try {
+        if (event === 'SIGNED_IN' && session) {
+          const user = await authService.getCurrentUser();
+          if (user) {
+            setUser(user);
+            setSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at ?? Date.now() + 3600000,
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          logout();
+        } else if (event === 'TOKEN_REFRESHED' && session) {
           setSession({
             access_token: session.access_token,
             refresh_token: session.refresh_token,
             expires_at: session.expires_at ?? Date.now() + 3600000,
           });
+        } else if (event === 'USER_UPDATED' && session) {
+          const user = await authService.getCurrentUser();
+          if (user) {
+            setUser(user);
+          }
         }
-      } else if (event === 'SIGNED_OUT') {
-        logout();
-      } else if (event === 'TOKEN_REFRESHED' && session) {
-        setSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: session.expires_at ?? Date.now() + 3600000,
-        });
-      } else if (event === 'USER_UPDATED' && session) {
-        const user = await authService.getCurrentUser();
-        if (user) {
-          setUser(user);
+      } catch (error: any) {
+        // Handle refresh token errors gracefully
+        if (error?.message?.includes('Invalid Refresh Token') || 
+            error?.message?.includes('Refresh Token Not Found') ||
+            error?.message?.includes('refresh_token_not_found')) {
+          logout();
+        } else {
         }
       }
     });
@@ -126,17 +136,11 @@ export default function RootLayout() {
           }
         } catch (error) {
           // Silently handle errors in callback
-          if (__DEV__) {
-            console.warn('[RootLayout] Error handling profile update:', error);
-          }
         }
       });
     } catch (error) {
       // Silently handle subscription creation errors
       // App will continue to work without realtime updates
-      if (__DEV__) {
-        console.warn('[RootLayout] Failed to create profile subscription:', error);
-      }
     }
 
     // Cleanup subscription on unmount or when user changes
@@ -146,30 +150,29 @@ export default function RootLayout() {
           unsubscribeProfile();
         } catch (error) {
           // Silently handle cleanup errors
-          if (__DEV__) {
-            console.warn('[RootLayout] Error cleaning up profile subscription:', error);
-          }
         }
       }
     };
   }, [user?.id, setProfile]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="splash" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="ads" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ headerShown: false }} />
-        <Stack.Screen name="legal" options={{ headerShown: false }} />
-        <Stack.Screen name="scanner" options={{ headerShown: false }} />
-        <Stack.Screen name="story" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="splash" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="ads" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+          <Stack.Screen name="legal" options={{ headerShown: false }} />
+          <Stack.Screen name="scanner" options={{ headerShown: false }} />
+          <Stack.Screen name="story" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

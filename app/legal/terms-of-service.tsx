@@ -1,7 +1,9 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Terms of Service Screen
@@ -10,6 +12,22 @@ import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from '
  */
 export default function TermsOfServiceScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
+
+  // Calculate responsive values
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const headerPaddingBottom = isSmall ? SPACING.sm : SPACING.base;
+  const backButtonSize = isSmall ? 40 : 44;
+  const backIconSize = isSmall ? 20 : 24;
+  const headerTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const scrollPaddingTop = isSmall ? SPACING.md : 24;
+  const scrollPaddingBottom = isSmall ? SPACING.xl : 40;
+  const mainHeadingFontSize = isSmall ? FONT_SIZES.xl : 22;
+  const mainHeadingMarginBottom = isSmall ? SPACING.md : 20;
+  const contentTextFontSize = isSmall ? FONT_SIZES.sm : 15;
 
   const handleBack = () => {
     router.back();
@@ -20,29 +38,29 @@ export default function TermsOfServiceScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingBottom: headerPaddingBottom, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { width: backButtonSize, height: backButtonSize }]}
           onPress={handleBack}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Terms of service</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={[styles.headerTitle, { fontSize: headerTitleFontSize }]}>Terms of service</Text>
+        <View style={[styles.headerSpacer, { width: backButtonSize }]} />
       </View>
 
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding, paddingTop: scrollPaddingTop, paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={false}>
         
         {/* Main Heading */}
-        <Text style={styles.mainHeading}>AutoCart Terms of Service</Text>
+        <Text style={[styles.mainHeading, { fontSize: mainHeadingFontSize, marginBottom: mainHeadingMarginBottom }]}>AutoCart Terms of Service</Text>
 
         {/* Terms Content */}
         <View style={styles.contentSection}>
-          <Text style={styles.contentText}>
+          <Text style={[styles.contentText, { fontSize: contentTextFontSize }]}>
             <Text style={styles.boldText}>Effective date: Sept. 19, 2024</Text>
             {'\n\n'}
             AutoCart and its affiliates ("AutoCart," "Company", "We," "Our," or "Us") provide an online marketplace for a range of new and premium used cars from Ireland's and all of the UK's trusted Car Vendors and Dealerships. Our platform is designed to allow users to carry out swift & secure car deals — whichever side of the transaction they're on (dealer or customer).
@@ -128,54 +146,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: '#E0F2FE', // Light blue/teal background
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   backButton: {
-    width: 44,
-    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   headerSpacer: {
-    width: 44,
+    // width set dynamically
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 40,
+    // paddingHorizontal, paddingTop, paddingBottom set dynamically
   },
   mainHeading: {
-    fontSize: 22,
     fontWeight: '700',
     color: '#111827',
     fontFamily: 'system-ui',
-    marginBottom: 20,
+    // fontSize and marginBottom set dynamically
   },
   contentSection: {
     marginBottom: 20,
   },
   contentText: {
-    fontSize: 15,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
     lineHeight: 24,
+    // fontSize set dynamically
   },
   boldText: {
     fontWeight: '700',

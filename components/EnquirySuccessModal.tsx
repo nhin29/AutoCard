@@ -1,4 +1,5 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface EnquirySuccessModalProps {
@@ -19,20 +20,39 @@ export function EnquirySuccessModal({
   onBackToListings,
   onViewSimilarCars,
 }: EnquirySuccessModalProps) {
+  const { isSmall, width: screenWidth } = useResponsive();
+
+  // Calculate responsive values - reduced for small phones like EnquiryModal
+  const modalPadding = isSmall ? SPACING.xs : 20;
+  const modalMaxWidth = isSmall ? screenWidth - (SPACING.sm * 2) : 420;
+  const modalPaddingH = isSmall ? SPACING.sm : 24;
+  const modalPaddingTop = isSmall ? SPACING.md : 32;
+  const modalPaddingBottom = isSmall ? SPACING.sm : 24;
+  const closeButtonSize = isSmall ? 20 : 26;
+  const closeIconSize = isSmall ? 10 : 12;
+  const iconCircleSize = isSmall ? 48 : 64;
+  const titleFontSize = isSmall ? FONT_SIZES.sm : 20;
+  const subtitleFontSize = isSmall ? FONT_SIZES.xs : 14;
+  const buttonHeight = isSmall ? 38 : 44;
+  const buttonFontSize = isSmall ? FONT_SIZES.xs : 14;
+  const iconMarginBottom = isSmall ? SPACING.sm : 16;
+  const titleMarginBottom = isSmall ? SPACING.xs : 10;
+  const subtitleMarginBottom = isSmall ? SPACING.sm : 24;
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}>
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+      <Pressable style={[styles.modalOverlay, { padding: modalPadding }]} onPress={onClose}>
+        <View style={[styles.modalCard, { maxWidth: modalMaxWidth, paddingHorizontal: modalPaddingH, paddingTop: modalPaddingTop, paddingBottom: modalPaddingBottom }]} onStartShouldSetResponder={() => true}>
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[styles.closeButton, { top: isSmall ? 12 : 16, right: isSmall ? 12 : 16 }]}
             onPress={onClose}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <View style={styles.closeButtonCircle}>
-              <IconSymbol name="xmark" size={12} color="#FFFFFF" />
+            <View style={[styles.closeButtonCircle, { width: closeButtonSize, height: closeButtonSize, borderRadius: closeButtonSize / 2 }]}>
+              <IconSymbol name="xmark" size={closeIconSize} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
 
@@ -49,16 +69,16 @@ export function EnquirySuccessModal({
 
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.secondaryButton]}
+              style={[styles.actionButton, styles.secondaryButton, { height: buttonHeight }]}
               onPress={onBackToListings ?? onClose}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <Text style={styles.secondaryButtonText}>Back to listings</Text>
+              <Text style={[styles.secondaryButtonText, { fontSize: buttonFontSize }]}>Back to listings</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionButton, styles.primaryButton]}
+              style={[styles.actionButton, styles.primaryButton, { height: buttonHeight }]}
               onPress={onViewSimilarCars ?? onClose}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <Text style={styles.primaryButtonText}>View similar cars</Text>
+              <Text style={[styles.primaryButtonText, { fontSize: buttonFontSize }]}>View similar cars</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -73,58 +93,48 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    // padding set dynamically
   },
   modalCard: {
     width: '100%',
-    maxWidth: 420,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+    // maxWidth, paddingHorizontal, paddingTop, paddingBottom set dynamically
   },
   closeButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
     zIndex: 2,
+    // top and right set dynamically
   },
   closeButtonCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
     backgroundColor: '#6B7280',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius set dynamically
   },
   iconWrapper: {
     alignItems: 'center',
-    marginBottom: 16,
+    // marginBottom set dynamically
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     backgroundColor: '#DCFCE7',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius set dynamically
   },
   title: {
-    fontSize: 20,
     fontWeight: '700',
     color: '#111827',
     textAlign: 'center',
-    marginBottom: 10,
     fontFamily: 'system-ui',
+    // fontSize and marginBottom set dynamically
   },
   subtitle: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 24,
     fontFamily: 'system-ui',
+    // fontSize and marginBottom set dynamically
   },
   actionRow: {
     flexDirection: 'row',
@@ -132,10 +142,10 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    height: 44,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    // height set dynamically
   },
   secondaryButton: {
     backgroundColor: '#F3F4F6',
@@ -144,15 +154,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#16A34A',
   },
   secondaryButtonText: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#111827',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   primaryButtonText: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
 });

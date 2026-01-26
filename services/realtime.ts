@@ -47,9 +47,7 @@ async function isRealtimeAvailable(): Promise<boolean> {
     // Note: This is a best-effort check - actual subscription may still fail
     return true;
   } catch (error) {
-    if (__DEV__) {
-      console.warn('[Realtime] Realtime may not be available:', error);
-    }
+    // Realtime may not be available
     return false;
   }
 }
@@ -71,11 +69,8 @@ async function isRealtimeAvailable(): Promise<boolean> {
  * ```typescript
  * const unsubscribe = subscribeToAds((payload) => {
  *   if (payload.event === 'INSERT') {
- *     console.log('New ad created:', payload.new);
  *   } else if (payload.event === 'UPDATE') {
- *     console.log('Ad updated:', payload.new);
  *   } else if (payload.event === 'DELETE') {
- *     console.log('Ad deleted:', payload.old);
  *   }
  * });
  * 
@@ -110,7 +105,6 @@ export function subscribeToAds(callback: RealtimeAdCallback): () => void {
           
           callback(realtimePayload);
         } catch (error) {
-          console.error('[Realtime] Error processing ad change:', error);
         }
       }
     )
@@ -122,21 +116,12 @@ export function subscribeToAds(callback: RealtimeAdCallback): () => void {
           // Silently handle channel errors - don't show console errors
           // This can happen if realtime is not enabled or network issues occur
           // The app will continue to work without realtime updates
-          if (__DEV__) {
-            console.warn('[Realtime] Channel subscription failed (realtime may be disabled):', err?.message || '');
-          }
         } else if (status === 'TIMED_OUT') {
-          if (__DEV__) {
-            console.warn('[Realtime] Subscription timed out');
-          }
         } else if (status === 'CLOSED') {
           // Subscription closed - normal behavior
         }
       } catch (error) {
         // Silently catch any errors in subscription callback
-        if (__DEV__) {
-          console.warn('[Realtime] Error in subscription callback:', error);
-        }
       }
     });
 
@@ -179,7 +164,6 @@ export function subscribeToAd(
           
           callback(realtimePayload);
         } catch (error) {
-          console.error('[Realtime] Error processing ad change:', error);
         }
       }
     )
@@ -189,14 +173,8 @@ export function subscribeToAd(
           // Successfully subscribed
         } else if (status === 'CHANNEL_ERROR') {
           // Silently handle channel errors
-          if (__DEV__) {
-            console.warn(`[Realtime] Ad subscription failed for ad ${adId} (realtime may be disabled):`, err?.message || '');
-          }
         }
       } catch (error) {
-        if (__DEV__) {
-          console.warn(`[Realtime] Error in ad subscription callback for ${adId}:`, error);
-        }
       }
     });
 
@@ -238,7 +216,6 @@ export function subscribeToUserAds(
           
           callback(realtimePayload);
         } catch (error) {
-          console.error('[Realtime] Error processing user ad change:', error);
         }
       }
     )
@@ -248,14 +225,8 @@ export function subscribeToUserAds(
           // Successfully subscribed
         } else if (status === 'CHANNEL_ERROR') {
           // Silently handle channel errors
-          if (__DEV__) {
-            console.warn(`[Realtime] User ads subscription failed for user ${userId} (realtime may be disabled):`, err?.message || '');
-          }
         }
       } catch (error) {
-        if (__DEV__) {
-          console.warn(`[Realtime] Error in user ads subscription callback for ${userId}:`, error);
-        }
       }
     });
 
@@ -278,7 +249,6 @@ export function subscribeToUserAds(
  * ```typescript
  * const unsubscribe = subscribeToProfile(userId, (payload) => {
  *   if (payload.event === 'UPDATE' && payload.new) {
- *     console.log('Profile updated:', payload.new);
  *     // Update your store/state here
  *   }
  * });
@@ -312,7 +282,6 @@ export function subscribeToProfile(
           
           callback(realtimePayload);
         } catch (error) {
-          console.error('[Realtime] Error processing profile change:', error);
         }
       }
     )
@@ -323,21 +292,12 @@ export function subscribeToProfile(
         } else if (status === 'CHANNEL_ERROR') {
           // Silently handle channel errors - don't show console errors
           // This can happen if realtime is not enabled or network issues occur
-          if (__DEV__) {
-            console.warn(`[Realtime] Profile subscription failed for user ${userId} (realtime may be disabled):`, err?.message || '');
-          }
         } else if (status === 'TIMED_OUT') {
-          if (__DEV__) {
-            console.warn(`[Realtime] Profile subscription timed out for user ${userId}`);
-          }
         } else if (status === 'CLOSED') {
           // Subscription closed - normal behavior
         }
       } catch (error) {
         // Silently catch any errors in subscription callback
-        if (__DEV__) {
-          console.warn(`[Realtime] Error in profile subscription callback for ${userId}:`, error);
-        }
       }
     });
 

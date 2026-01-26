@@ -1,7 +1,9 @@
+import { SignupHeader } from '@/components/auth/SignupHeader';
 import { ImageEditor } from '@/components/ImageEditor';
 import { ImagePickerModal } from '@/components/place-ad/ImagePickerModal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import * as Device from 'expo-device';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,6 +22,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Sign Up Screen - Step 3: Create your Trade seller account
@@ -33,6 +36,21 @@ import {
 export default function SignUpStep3Screen() {
   const router = useRouter();
   const { signupData, setSignupBusinessInfo } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
+
+  // Calculate responsive values - reduced for small phones with safe area insets
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.lg;
+  const horizontalPaddingWithInsets = Math.max(horizontalPadding, insets.left, insets.right);
+  const bottomPadding = Math.max(insets.bottom, isSmall ? SPACING.base : SPACING.xl);
+  const inputHeight = isSmall ? 40 : 48;
+  const buttonHeight = isSmall ? 42 : 48;
+  const logoSize = isSmall ? 60 : 80;
+  const bannerHeight = isSmall ? 80 : 120;
+  const inputMarginBottom = isSmall ? SPACING.sm : SPACING.md;
+  const formPaddingTop = isSmall ? SPACING.sm : SPACING.md;
+  const labelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
   
   // Initialize form state from auth store (supports back navigation)
   const [email, setEmail] = useState(signupData.email || '');
@@ -177,7 +195,6 @@ export default function SignUpStep3Screen() {
         openImageEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      if (__DEV__) console.error('[SignUpStep3] Camera error:', e);
       
       const errorMessage = e?.message || 'Unknown error';
       const isPermissionError = errorMessage.toLowerCase().includes('permission') || 
@@ -231,7 +248,6 @@ export default function SignUpStep3Screen() {
         openImageEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      if (__DEV__) console.error('[SignUpStep3] ImagePicker error:', e);
       
       const errorMessage = e?.message || 'Unknown error';
       const isPermissionError = errorMessage.toLowerCase().includes('permission') || 
@@ -267,7 +283,6 @@ export default function SignUpStep3Screen() {
         openImageEditor(result.assets[0].uri);
       }
     } catch (e) {
-      if (__DEV__) console.error('[SignUpStep3] DocumentPicker error:', e);
       Alert.alert(
         'Upload',
         'Unable to open the file picker. Please try again.',
@@ -326,7 +341,6 @@ export default function SignUpStep3Screen() {
         openBannerEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[SignUpStep3] Banner camera error:', e);
       Alert.alert('Camera Error', 'Unable to open camera. Please try again.', [{ text: 'OK' }]);
     } finally {
       setIsPickingBanner(false);
@@ -357,7 +371,6 @@ export default function SignUpStep3Screen() {
         openBannerEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[SignUpStep3] Banner picker error:', e);
       Alert.alert('Photo Library Error', 'Unable to select image. Please try again.', [{ text: 'OK' }]);
     } finally {
       setIsPickingBanner(false);
@@ -377,7 +390,6 @@ export default function SignUpStep3Screen() {
         openBannerEditor(result.assets[0].uri);
       }
     } catch (e) {
-      console.error('[SignUpStep3] Banner file picker error:', e);
       Alert.alert('Upload', 'Unable to open the file picker. Please try again.', [{ text: 'OK' }]);
     } finally {
       setIsPickingBanner(false);
@@ -455,31 +467,34 @@ export default function SignUpStep3Screen() {
       <StatusBar style="dark" />
 
       {/* Header: Back + Title */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          Create your Trade seller account
-        </Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <SignupHeader
+        showBackButton
+        title="Create your Trade seller account"
+        onBack={handleBack}
+      />
 
       {/* Form Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            paddingBottom: Math.max(bottomPadding, isSmall ? SPACING.lg : SPACING.xxl),
+            paddingTop: isSmall ? SPACING.xs : SPACING.sm,
+          }
+        ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.formContent}>
+        showsVerticalScrollIndicator={true}>
+        <View style={[styles.formContent, { paddingHorizontal: horizontalPaddingWithInsets, paddingTop: formPaddingTop }]}>
         {/* Email Address */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Email Address</Text>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Email Address</Text>
           <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
+            style={[
+              styles.input,
+              { height: inputHeight, fontSize: inputFontSize },
+              errors.email && styles.inputError
+            ]}
             placeholder="Enter your email"
             placeholderTextColor="#9CA3AF"
             value={email}
@@ -494,15 +509,19 @@ export default function SignUpStep3Screen() {
             autoCorrect={false}
           />
           {errors.email && (
-            <Text style={styles.errorText}>{errors.email}</Text>
+            <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.email}</Text>
           )}
         </View>
 
         {/* Business Name */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Business Name</Text>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Business Name</Text>
           <TextInput
-            style={[styles.input, errors.businessName && styles.inputError]}
+            style={[
+              styles.input,
+              { height: inputHeight, fontSize: inputFontSize },
+              errors.businessName && styles.inputError
+            ]}
             placeholder="Business Name"
             placeholderTextColor="#9CA3AF"
             value={businessName}
@@ -515,15 +534,20 @@ export default function SignUpStep3Screen() {
             autoCapitalize="words"
           />
           {errors.businessName && (
-            <Text style={styles.errorText}>{errors.businessName}</Text>
+            <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.businessName}</Text>
           )}
         </View>
 
         {/* Address */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Address</Text>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Address</Text>
           <TextInput
-            style={[styles.input, styles.inputMultiline, errors.address && styles.inputError]}
+            style={[
+              styles.input,
+              styles.inputMultiline,
+              { minHeight: inputHeight, fontSize: inputFontSize },
+              errors.address && styles.inputError
+            ]}
             placeholder="Lorem ipsum dolor sit amet consectetur. Urna."
             placeholderTextColor="#9CA3AF"
             value={address}
@@ -537,15 +561,19 @@ export default function SignUpStep3Screen() {
             numberOfLines={2}
           />
           {errors.address && (
-            <Text style={styles.errorText}>{errors.address}</Text>
+            <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.address}</Text>
           )}
         </View>
 
         {/* Contact Person Name */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Contact Person Name</Text>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Contact Person Name</Text>
           <TextInput
-            style={[styles.input, errors.contactPersonName && styles.inputError]}
+            style={[
+              styles.input,
+              { height: inputHeight, fontSize: inputFontSize },
+              errors.contactPersonName && styles.inputError
+            ]}
             placeholder="Contact Person Name"
             placeholderTextColor="#9CA3AF"
             value={contactPersonName}
@@ -558,17 +586,17 @@ export default function SignUpStep3Screen() {
             autoCapitalize="words"
           />
           {errors.contactPersonName && (
-            <Text style={styles.errorText}>{errors.contactPersonName}</Text>
+            <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.contactPersonName}</Text>
           )}
         </View>
 
         {/* VAT Number (Recommended) */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>
             VAT Number <Text style={styles.labelHint}>(Recommended)</Text>
           </Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
             placeholder="VAT Number"
             placeholderTextColor="#9CA3AF"
             value={vatNumber}
@@ -579,12 +607,12 @@ export default function SignUpStep3Screen() {
         </View>
 
         {/* Dealer License (Optional) */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>
             Dealer License <Text style={styles.labelHint}>(Optional)</Text>
           </Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
             placeholder="Dealer License"
             placeholderTextColor="#9CA3AF"
             value={dealerLicense}
@@ -593,9 +621,9 @@ export default function SignUpStep3Screen() {
         </View>
 
         {/* Upload Profile Banner */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Upload Profile Banner <Text style={styles.labelHint}>(Optional)</Text></Text>
-          <View style={styles.bannerUploadBox}>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Upload Profile Banner <Text style={styles.labelHint}>(Optional)</Text></Text>
+          <View style={[styles.bannerUploadBox, { height: bannerHeight }]}>
             {bannerUri ? (
               <>
                 <TouchableOpacity
@@ -625,17 +653,21 @@ export default function SignUpStep3Screen() {
                 disabled={isPickingBanner}
                 activeOpacity={0.7}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <IconSymbol name="photo" size={32} color="#9CA3AF" />
-                <Text style={styles.bannerPlaceholderText}>Tap to upload banner</Text>
+                <IconSymbol name="photo" size={isSmall ? 24 : 32} color="#9CA3AF" />
+                <Text style={[styles.bannerPlaceholderText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>Tap to upload banner</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
         {/* Upload Business Logo */}
-        <View style={styles.inputContainerLogo}>
-          <Text style={styles.inputLabel}>Upload Business Logo</Text>
-          <View style={[styles.logoUploadBox, errors.logoUri && styles.logoUploadBoxError]}>
+        <View style={[styles.inputContainerLogo, { marginBottom: isSmall ? SPACING.base : SPACING.xl }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Upload Business Logo</Text>
+          <View style={[
+            styles.logoUploadBox,
+            { width: logoSize, height: logoSize },
+            errors.logoUri && styles.logoUploadBoxError
+          ]}>
             {logoUri ? (
               <>
                 <TouchableOpacity
@@ -655,7 +687,7 @@ export default function SignUpStep3Screen() {
                   onPress={handleRemoveLogo}
                   hitSlop={8}
                   {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                  <Text style={styles.logoRemoveBtnText}>×</Text>
+                  <Text style={[styles.logoRemoveBtnText, { fontSize: isSmall ? 12 : 14 }]}>×</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -665,35 +697,42 @@ export default function SignUpStep3Screen() {
                 disabled={isPicking}
                 activeOpacity={0.7}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <Text style={styles.logoUploadPlus}>+</Text>
+                <Text style={[styles.logoUploadPlus, { fontSize: isSmall ? 24 : 32 }]}>+</Text>
               </TouchableOpacity>
             )}
           </View>
           {errors.logoUri && (
-            <Text style={styles.errorText}>{errors.logoUri}</Text>
+            <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.logoUri}</Text>
           )}
         </View>
         </View>
-
-        {/* Bottom: Continue + Login */}
-        <View style={styles.bottomSection}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginPrompt}>Already have an account?</Text>
-            <TouchableOpacity
-              onPress={handleLogin}
-              {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <Text style={styles.loginLink}>Login</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
+
+      {/* Bottom: Continue + Login - Fixed at bottom */}
+      <View style={[
+        styles.bottomSection,
+        {
+          paddingHorizontal: horizontalPaddingWithInsets,
+          paddingBottom: bottomPadding,
+          paddingTop: isSmall ? SPACING.sm : SPACING.base,
+        }
+      ]}>
+        <TouchableOpacity
+          style={[styles.continueButton, { height: buttonHeight }]}
+          onPress={handleContinue}
+          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+          <Text style={[styles.continueButtonText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Continue</Text>
+        </TouchableOpacity>
+
+        <View style={[styles.loginContainer, { marginTop: isSmall ? SPACING.sm : SPACING.lg }]}>
+          <Text style={[styles.loginPrompt, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Already have an account?</Text>
+          <TouchableOpacity
+            onPress={handleLogin}
+            {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+            <Text style={[styles.loginLink, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Login</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Image Picker Modal */}
       <ImagePickerModal
@@ -746,55 +785,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 0,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -8,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    textAlign: 'center',
-    fontFamily: 'system-ui',
-    paddingHorizontal: 8,
-  },
-  headerSpacer: {
-    width: 40,
+    paddingBottom: SPACING.xl,
   },
   formContent: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 12,
   },
   inputContainer: {
     width: '100%',
-    marginBottom: 12,
   },
   inputContainerLogo: {
     width: '100%',
-    marginBottom: 0,
+    marginBottom: SPACING.lg,
   },
   inputLabel: {
-    fontSize: 13,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
-    marginBottom: 6,
+    marginBottom: SPACING.xs,
   },
   labelHint: {
     color: '#9CA3AF',
@@ -802,13 +809,11 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    height: 44,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 15,
+    paddingHorizontal: SPACING.base,
     color: '#000000',
     fontFamily: 'system-ui',
   },
@@ -816,20 +821,16 @@ const styles = StyleSheet.create({
     borderColor: '#EF4444',
   },
   inputMultiline: {
-    height: 60,
-    paddingTop: 10,
+    paddingTop: SPACING.sm,
     textAlignVertical: 'top',
   },
   errorText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#EF4444',
     fontFamily: 'system-ui',
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   logoUploadBox: {
-    width: 80,
-    height: 80,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#E5E7EB',
@@ -880,7 +881,6 @@ const styles = StyleSheet.create({
   },
   bannerUploadBox: {
     width: '100%',
-    height: 120,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#E5E7EB',
@@ -923,27 +923,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bannerPlaceholderText: {
-    fontSize: 12,
+    fontSize: FONT_SIZES.sm,
     fontWeight: '400',
     color: '#9CA3AF',
     fontFamily: 'system-ui',
   },
   bottomSection: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
     backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   continueButton: {
     width: '100%',
-    height: 48,
     backgroundColor: '#4CAF50',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
@@ -952,17 +954,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
-    gap: 4,
+    gap: SPACING.xs,
   },
   loginPrompt: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.base,
     fontWeight: '400',
     color: '#9CA3AF',
     fontFamily: 'system-ui',
   },
   loginLink: {
-    fontSize: 14,
+    fontSize: FONT_SIZES.base,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'system-ui',

@@ -1,7 +1,9 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
@@ -11,8 +13,27 @@ import { Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View
  */
 export default function PrivacyPolicyScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const [privacyPolicyExpanded, setPrivacyPolicyExpanded] = useState(true);
   const [privacyStatementExpanded, setPrivacyStatementExpanded] = useState(false);
+
+  // Calculate responsive values
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const headerPaddingBottom = isSmall ? SPACING.sm : SPACING.base;
+  const backButtonSize = isSmall ? 40 : 44;
+  const backIconSize = isSmall ? 20 : 24;
+  const headerTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const scrollPaddingTop = isSmall ? SPACING.md : 20;
+  const scrollPaddingBottom = isSmall ? SPACING.xl : 40;
+  const sectionHeaderPaddingV = isSmall ? SPACING.sm : SPACING.base;
+  const sectionHeaderTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const sectionHeaderIconSize = isSmall ? 18 : 20;
+  const sectionContentPaddingTop = isSmall ? SPACING.sm : SPACING.base;
+  const sectionContentPaddingBottom = isSmall ? SPACING.md : 24;
+  const contentTextFontSize = isSmall ? FONT_SIZES.sm : 15;
 
   const handleBack = () => {
     router.back();
@@ -27,39 +48,39 @@ export default function PrivacyPolicyScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingBottom: headerPaddingBottom, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { width: backButtonSize, height: backButtonSize }]}
           onPress={handleBack}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Privacy Policy</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={[styles.headerTitle, { fontSize: headerTitleFontSize }]}>Privacy Policy</Text>
+        <View style={[styles.headerSpacer, { width: backButtonSize }]} />
       </View>
 
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding, paddingTop: scrollPaddingTop, paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={false}>
         
         {/* AutoCart Privacy Policy Section */}
         <TouchableOpacity
-          style={styles.sectionHeader}
+          style={[styles.sectionHeader, { paddingVertical: sectionHeaderPaddingV }]}
           onPress={() => setPrivacyPolicyExpanded(!privacyPolicyExpanded)}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.sectionHeaderTitle}>AutoCart Privacy Policy</Text>
+          <Text style={[styles.sectionHeaderTitle, { fontSize: sectionHeaderTitleFontSize }]}>AutoCart Privacy Policy</Text>
           <IconSymbol
             name={privacyPolicyExpanded ? 'chevron.up' : 'chevron.down'}
-            size={20}
+            size={sectionHeaderIconSize}
             color="#6B7280"
           />
         </TouchableOpacity>
 
         {privacyPolicyExpanded && (
-          <View style={styles.sectionContent}>
-            <Text style={styles.contentText}>
+          <View style={[styles.sectionContent, { paddingTop: sectionContentPaddingTop, paddingBottom: sectionContentPaddingBottom }]}>
+            <Text style={[styles.contentText, { fontSize: contentTextFontSize }]}>
               AutoCart and its affiliates ("AutoCart," "Company", "We," "Our," or "Us") provide an online marketplace for a range of new and premium used cars from Ireland's and all of the UK's trusted Car Vendors and Dealerships. We are committed to protecting your privacy and ensuring the security of your personal information.
               {'\n\n'}
               This Privacy Policy explains how we collect, use, store, share, and protect your personal data when you visit our website, use our mobile application, or interact with our services. We are transparent about our data practices and are accountable for the personal information we collect and process.
@@ -79,20 +100,20 @@ export default function PrivacyPolicyScreen() {
 
         {/* Our Privacy Statement Section */}
         <TouchableOpacity
-          style={styles.sectionHeader}
+          style={[styles.sectionHeader, { paddingVertical: sectionHeaderPaddingV }]}
           onPress={() => setPrivacyStatementExpanded(!privacyStatementExpanded)}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.sectionHeaderTitle}>Our Privacy Statement</Text>
+          <Text style={[styles.sectionHeaderTitle, { fontSize: sectionHeaderTitleFontSize }]}>Our Privacy Statement</Text>
           <IconSymbol
             name={privacyStatementExpanded ? 'chevron.up' : 'chevron.down'}
-            size={20}
+            size={sectionHeaderIconSize}
             color="#6B7280"
           />
         </TouchableOpacity>
 
         {privacyStatementExpanded && (
-          <View style={styles.sectionContent}>
-            <Text style={styles.contentText}>
+          <View style={[styles.sectionContent, { paddingTop: sectionContentPaddingTop, paddingBottom: sectionContentPaddingBottom }]}>
+            <Text style={[styles.contentText, { fontSize: contentTextFontSize }]}>
               <Text style={styles.boldText}>1. Information We Collect</Text>
               {'\n\n'}
               We collect information that you provide directly to us, including:
@@ -173,62 +194,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   backButton: {
-    width: 44,
-    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   headerSpacer: {
-    width: 44,
+    // width set dynamically
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+    // paddingHorizontal, paddingTop, paddingBottom set dynamically
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingVertical set dynamically
   },
   sectionHeaderTitle: {
-    fontSize: 18,
     fontWeight: '700',
     color: '#111827',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   sectionContent: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    // paddingTop and paddingBottom set dynamically
   },
   contentText: {
-    fontSize: 15,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
     lineHeight: 24,
+    // fontSize set dynamically
   },
   boldText: {
     fontWeight: '700',

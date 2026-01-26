@@ -1,12 +1,12 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { authService } from '@/services/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { 
   ActivityIndicator,
-  Alert,
   Image, 
   KeyboardAvoidingView, 
   Platform, 
@@ -17,6 +17,7 @@ import {
   TouchableOpacity, 
   View 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Sign In Screen
@@ -31,12 +32,34 @@ import {
 export default function SignInScreen() {
   const router = useRouter();
   const { setUser, setSession } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Calculate responsive values - reduced for small phones with safe area insets
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.lg;
+  const horizontalPaddingWithInsets = Math.max(horizontalPadding, insets.left, insets.right);
+  const topPadding = Math.max(insets.top + (isSmall ? SPACING.base : SPACING.lg), isSmall ? SPACING.xl : SPACING.xxl);
+  const bottomPadding = Math.max(insets.bottom, isSmall ? SPACING.base : SPACING.xl);
+  const logoWidth = isSmall ? Math.min(screenWidth * 0.5, 160) : Math.min(screenWidth * 0.5, 200);
+  const logoHeight = (logoWidth * 60) / 200; // Maintain aspect ratio
+  const titleFontSize = isSmall ? FONT_SIZES.lg : FONT_SIZES['2xl'];
+  const inputHeight = isSmall ? 40 : 48;
+  const buttonHeight = isSmall ? 42 : 48;
+  const logoMarginTop = isSmall ? SPACING.md : SPACING.xl;
+  const logoMarginBottom = isSmall ? SPACING.md : SPACING.xl;
+  const titleMarginBottom = isSmall ? SPACING.md : SPACING.xl;
+  const formGap = isSmall ? SPACING.sm : SPACING.lg;
+  const signUpMarginTop = isSmall ? SPACING.md : SPACING.xl;
+  const labelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const inputMarginBottom = isSmall ? SPACING.sm : SPACING.md;
+  const eyeIconSize = isSmall ? 16 : 20;
 
   const handleLogin = async () => {
     // Clear previous errors
@@ -85,7 +108,6 @@ export default function SignInScreen() {
         setError('Login failed. Please try again.');
       }
     } catch (err: any) {
-      console.error('[SignIn] Login error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -106,38 +128,49 @@ export default function SignInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: topPadding,
+            paddingHorizontal: horizontalPaddingWithInsets,
+            paddingBottom: bottomPadding,
+          }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <StatusBar style="dark" />
 
       {/* Logo and Tagline */}
-      <View style={styles.logoContainer}>
+      <View style={[styles.logoContainer, { marginTop: logoMarginTop, marginBottom: logoMarginBottom }]}>
         <Image
           source={require('@/assets/images/auth-logo.png')}
-          style={styles.logoImage}
+          style={[styles.logoImage, { width: logoWidth, height: logoHeight }]}
           resizeMode="contain"
         />
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Log In to your Account</Text>
+      <Text style={[styles.title, { fontSize: titleFontSize, marginBottom: titleMarginBottom }]}>Log In to your Account</Text>
 
       {/* Error Message */}
       {error && (
         <View style={styles.errorContainer}>
-          <IconSymbol name="exclamationmark.circle.fill" size={16} color="#EF4444" />
-          <Text style={styles.errorText}>{error}</Text>
+          <IconSymbol name="exclamationmark.circle.fill" size={isSmall ? 14 : 16} color="#EF4444" />
+          <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{error}</Text>
         </View>
       )}
 
       {/* Form */}
-      <View style={styles.formContainer}>
+      <View style={[styles.formContainer, { gap: formGap }]}>
         {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Email Address</Text>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Email Address</Text>
           <TextInput
-            style={[styles.input, error && !email.trim() && styles.inputError]}
+            style={[
+              styles.input,
+              { height: inputHeight, fontSize: inputFontSize },
+              error && !email.trim() && styles.inputError
+            ]}
             placeholder="Email Address"
             placeholderTextColor="#9CA3AF"
             value={email}
@@ -155,11 +188,15 @@ export default function SignInScreen() {
         </View>
 
         {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Password</Text>
-          <View style={[styles.passwordInputWrapper, error && !password && styles.inputError]}>
+        <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+          <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Password</Text>
+          <View style={[
+            styles.passwordInputWrapper,
+            { height: inputHeight },
+            error && !password && styles.inputError
+          ]}>
             <TextInput
-              style={styles.passwordInput}
+              style={[styles.passwordInput, { fontSize: inputFontSize }]}
               placeholder="Password"
               placeholderTextColor="#9CA3AF"
               value={password}
@@ -181,7 +218,7 @@ export default function SignInScreen() {
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
               <IconSymbol
                 name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
-                size={20}
+                size={eyeIconSize}
                 color="#9CA3AF"
               />
             </TouchableOpacity>
@@ -194,31 +231,35 @@ export default function SignInScreen() {
           onPress={handleForgotPassword}
           disabled={isLoading}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          <Text style={[styles.forgotPasswordText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Forgot password?</Text>
         </TouchableOpacity>
 
         {/* Login Button */}
         <TouchableOpacity
-          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+          style={[
+            styles.loginButton,
+            { height: buttonHeight },
+            isLoading && styles.loginButtonDisabled
+          ]}
           onPress={handleLogin}
           disabled={isLoading}
           {...(Platform.OS === 'web' && { cursor: isLoading ? 'not-allowed' : 'pointer' })}>
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.loginButtonText}>Log In</Text>
+            <Text style={[styles.loginButtonText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Log In</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* Sign Up Link */}
-      <View style={styles.signUpContainer}>
-        <Text style={styles.signUpPrompt}>Don&apos;t have an account?</Text>
+      <View style={[styles.signUpContainer, { marginTop: signUpMarginTop }]}>
+        <Text style={[styles.signUpPrompt, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Don&apos;t have an account?</Text>
         <TouchableOpacity
           onPress={handleSignUp}
           disabled={isLoading}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.signUpLink}>Sign up</Text>
+          <Text style={[styles.signUpLink, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Sign up</Text>
         </TouchableOpacity>
       </View>
       </ScrollView>
@@ -233,33 +274,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 50,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 40,
   },
   logoImage: {
-    width: 200,
-    height: 60,
-    marginBottom: 8,
+    // Width and height are set dynamically based on screen size
   },
   tagline: {
-    fontSize: 12,
+    fontSize: FONT_SIZES.sm,
     fontWeight: '400',
     color: '#6B7280', // Gray
     fontFamily: 'system-ui',
     letterSpacing: 0.5,
   },
   title: {
-    fontSize: 24,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 32,
     fontFamily: 'system-ui',
   },
   errorContainer: {
@@ -270,39 +302,34 @@ const styles = StyleSheet.create({
     borderColor: '#FECACA',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: SPACING.base,
     gap: 8,
   },
   errorText: {
     flex: 1,
-    fontSize: 14,
     fontWeight: '400',
     color: '#DC2626',
     fontFamily: 'system-ui',
   },
   formContainer: {
     width: '100%',
-    gap: 20,
   },
   inputContainer: {
     width: '100%',
-    gap: 8,
   },
   inputLabel: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#9CA3AF', // Light grey
     fontFamily: 'system-ui',
+    marginBottom: SPACING.xs,
   },
   input: {
     width: '100%',
-    height: 48,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB', // Light grey border
     borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    paddingHorizontal: SPACING.base,
     color: '#000000',
     fontFamily: 'system-ui',
   },
@@ -313,46 +340,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    height: 48,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.base,
   },
   passwordInput: {
     flex: 1,
-    fontSize: 16,
     color: '#000000',
     fontFamily: 'system-ui',
   },
   eyeIcon: {
-    padding: 4,
+    padding: SPACING.xs,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginTop: -8,
+    marginTop: -SPACING.sm,
   },
   forgotPasswordText: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#2563EB', // Blue
     fontFamily: 'system-ui',
   },
   loginButton: {
     width: '100%',
-    height: 48,
     backgroundColor: '#4CAF50', // Green
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: SPACING.sm,
   },
   loginButtonDisabled: {
     backgroundColor: '#9CA3AF',
   },
   loginButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
@@ -361,17 +383,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 32,
-    gap: 4,
+    gap: SPACING.xs,
   },
   signUpPrompt: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#9CA3AF', // Light grey
     fontFamily: 'system-ui',
   },
   signUpLink: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50', // Green
     fontFamily: 'system-ui',

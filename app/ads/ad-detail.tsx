@@ -21,26 +21,26 @@ import { subscribeToAd } from '@/services/realtime';
 import type { Ad } from '@/stores/useAdStore';
 import { useAdStore } from '@/stores/useAdStore';
 import type { Ad as DatabaseAd, Profile } from '@/types/database';
+import { FONT_SIZES, SPACING, useResponsive } from '@/utils/responsive';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    FlatList,
-    Image,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Format timestamp to relative time (e.g., "Just Now", "8 mins ago")
@@ -63,13 +63,28 @@ const formatTimeAgo = (timestamp: string): string => {
  * Fetches seller profile data independently for each card.
  */
 function RelatedAdCard({ ad, onPress }: { ad: Ad; onPress: () => void }) {
-  // Calculate card width to show 2 cards per row
-  // Screen width - section padding (16px each side = 32px) - gap between cards (6px) / 2
-  // Add extra margin to ensure cards don't get cut off
-  const sectionPadding = 16 * 2; // 16px on each side
-  const cardGap = 6; // reduced gap between cards
-  const cardWidth = (SCREEN_WIDTH - sectionPadding - cardGap) / 2 - 4; // Subtract 4px for safety margin
+  const { width: screenWidth } = useWindowDimensions();
+  const { isSmall } = useResponsive();
+  // Calculate card width to show 2 cards per row with responsive padding
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  const sectionPadding = horizontalPadding * 2;
+  const cardGap = isSmall ? 4 : 6;
+  const cardWidth = (screenWidth - sectionPadding - cardGap) / 2 - 2; // Subtract 2px for safety margin
   const [sellerProfile, setSellerProfile] = useState<Profile | null>(null);
+  
+  // Responsive sizes for related ad card
+  const relatedAdImageHeight = isSmall ? 90 : 110;
+  const relatedAdSpotlightIconSize = isSmall ? 8 : 10;
+  const relatedAdSpotlightFontSize = isSmall ? 8 : 9;
+  const imageCountIconSize = isSmall ? 7 : 9;
+  const imageCountFontSize = isSmall ? 8 : 9;
+  const relatedAdTitleFontSize = isSmall ? FONT_SIZES.xs : 13;
+  const relatedAdPriceFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.sm;
+  const relatedAdAvatarSize = isSmall ? 20 : 24;
+  const relatedAdSellerNameFontSize = isSmall ? 10 : 11;
+  const relatedAdLocationIconSize = isSmall ? 8 : 10;
+  const relatedAdLocationFontSize = isSmall ? 8 : 9;
+  const relatedAdSellerTypeFontSize = isSmall ? 7 : 8;
 
   // Fetch seller profile for this ad
   useEffect(() => {
@@ -84,7 +99,7 @@ function RelatedAdCard({ ad, onPress }: { ad: Ad; onPress: () => void }) {
           setSellerProfile(result.profile);
         }
       } catch (error) {
-        console.error('[RelatedAdCard] Error fetching profile:', error);
+        // Error fetching profile handled silently
       }
     };
 
@@ -123,45 +138,45 @@ function RelatedAdCard({ ad, onPress }: { ad: Ad; onPress: () => void }) {
       activeOpacity={0.9}
       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
       {/* Image Container */}
-      <View style={styles.relatedAdImageContainer}>
+      <View style={[styles.relatedAdImageContainer, { height: relatedAdImageHeight }]}>
         {mainImage ? (
           <Image
             source={{ uri: mainImage }}
-            style={styles.relatedAdImage}
+            style={[styles.relatedAdImage, { height: relatedAdImageHeight }]}
             resizeMode="cover"
           />
         ) : (
           <View style={styles.relatedAdImagePlaceholder}>
-            <IconSymbol name="photo" size={24} color="#9CA3AF" />
+            <IconSymbol name="photo" size={isSmall ? 20 : 24} color="#9CA3AF" />
           </View>
         )}
         
         {/* SPOTLIGHT Badge - Top Left */}
         {isSpotlight && (
-          <View style={styles.relatedAdSpotlightBadge}>
-            <IconSymbol name="flame.fill" size={10} color="#FFD700" />
-            <Text style={styles.relatedAdSpotlightText}>SPOTLIGHT</Text>
+          <View style={[styles.relatedAdSpotlightBadge, { paddingHorizontal: isSmall ? SPACING.xs : 6, paddingVertical: isSmall ? 2 : 3 }]}>
+            <IconSymbol name="flame.fill" size={relatedAdSpotlightIconSize} color="#FFD700" />
+            <Text style={[styles.relatedAdSpotlightText, { fontSize: relatedAdSpotlightFontSize }]}>SPOTLIGHT</Text>
           </View>
         )}
         
         {/* Image Count Badge - Top Right */}
         {additionalImages > 0 && (
-          <View style={styles.imageCountBadge}>
-            <ImageCountIcon size={9} color="#FFFFFF" />
-            <Text style={styles.imageCountText}>+{additionalImages}</Text>
+          <View style={[styles.imageCountBadge, { paddingHorizontal: isSmall ? SPACING.xs : 6, paddingVertical: isSmall ? 2 : 3 }]}>
+            <ImageCountIcon size={imageCountIconSize} color="#FFFFFF" />
+            <Text style={[styles.imageCountText, { fontSize: imageCountFontSize }]}>+{additionalImages}</Text>
           </View>
         )}
       </View>
 
       {/* Content Section */}
-      <View style={styles.relatedAdContent}>
+      <View style={[styles.relatedAdContent, { padding: isSmall ? 4 : 5 }]}>
         {/* Car Title */}
-        <Text style={styles.relatedAdTitle} numberOfLines={1}>
+        <Text style={[styles.relatedAdTitle, { fontSize: relatedAdTitleFontSize }]} numberOfLines={1}>
           {ad.itemName || 'Vehicle'}
         </Text>
 
         {/* Price */}
-        <Text style={styles.relatedAdPrice}>
+        <Text style={[styles.relatedAdPrice, { fontSize: relatedAdPriceFontSize }]}>
           {ad.currency} {parseInt(ad.amount || '0').toLocaleString()}
         </Text>
 
@@ -172,13 +187,13 @@ function RelatedAdCard({ ad, onPress }: { ad: Ad; onPress: () => void }) {
             {profileImageUrl ? (
               <Image
                 source={{ uri: profileImageUrl }}
-                style={styles.relatedAdSellerAvatar}
+                style={[styles.relatedAdSellerAvatar, { width: relatedAdAvatarSize, height: relatedAdAvatarSize, borderRadius: relatedAdAvatarSize / 2 }]}
                 resizeMode="cover"
               />
             ) : (
               <Image
                 source={require('@/assets/images/message-avatar.png')}
-                style={styles.relatedAdSellerAvatar}
+                style={[styles.relatedAdSellerAvatar, { width: relatedAdAvatarSize, height: relatedAdAvatarSize, borderRadius: relatedAdAvatarSize / 2 }]}
                 resizeMode="cover"
               />
             )}
@@ -187,14 +202,14 @@ function RelatedAdCard({ ad, onPress }: { ad: Ad; onPress: () => void }) {
           {/* Center: Name and Badge */}
           <View style={styles.relatedAdSellerInfoRight}>
             <View style={styles.relatedAdSellerNameRow}>
-              <Text style={styles.relatedAdSellerName} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={[styles.relatedAdSellerName, { fontSize: relatedAdSellerNameFontSize }]} numberOfLines={1} ellipsizeMode="tail">
                 {sellerName}
               </Text>
             </View>
             
             {/* Badge - Below name */}
-            <View style={styles.relatedAdSellerTypeBadge}>
-              <Text style={styles.relatedAdSellerTypeText} numberOfLines={1}>
+            <View style={[styles.relatedAdSellerTypeBadge, { minHeight: isSmall ? 12 : 14 }]}>
+              <Text style={[styles.relatedAdSellerTypeText, { fontSize: relatedAdSellerTypeFontSize }]} numberOfLines={1}>
                 {sellerTypeText}
               </Text>
             </View>
@@ -202,9 +217,9 @@ function RelatedAdCard({ ad, onPress }: { ad: Ad; onPress: () => void }) {
 
           {/* Right: Location - Centered vertically */}
           {ad.location && (
-            <View style={styles.relatedAdLocation}>
-              <LocationIcon width={10} height={10} />
-              <Text style={styles.relatedAdLocationText} numberOfLines={1} ellipsizeMode="tail">
+            <View style={[styles.relatedAdLocation, { maxWidth: isSmall ? 45 : 50 }]}>
+              <LocationIcon width={relatedAdLocationIconSize} height={relatedAdLocationIconSize} />
+              <Text style={[styles.relatedAdLocationText, { fontSize: relatedAdLocationFontSize }]} numberOfLines={1} ellipsizeMode="tail">
                 {ad.location}
               </Text>
             </View>
@@ -262,7 +277,10 @@ function convertDatabaseAdToStore(ad: DatabaseAd): Ad {
 }
 
 export default function AdDetailScreen() {
+  const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const params = useLocalSearchParams<{ adId?: string }>();
   const ads = useAdStore((state) => state.ads);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -284,6 +302,46 @@ export default function AdDetailScreen() {
   // Image slider refs
   const imageFlatListRef = useRef<FlatList>(null);
   const isScrollingRef = useRef(false);
+
+  // Calculate responsive values - reduced for small phones
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const backIconSize = isSmall ? 20 : 24;
+  const backButtonSize = isSmall ? 36 : 40;
+  const viewStoryButtonPaddingH = isSmall ? SPACING.sm : SPACING.base;
+  const viewStoryButtonPaddingV = isSmall ? SPACING.xs : SPACING.sm;
+  const viewStoryButtonFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const heroImageHeight = isSmall ? 220 : 300;
+  const spotlightIconSize = isSmall ? 12 : 16;
+  const spotlightFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const spotlightPaddingH = isSmall ? SPACING.sm : 10;
+  const spotlightPaddingV = isSmall ? SPACING.xs : SPACING.sm;
+  const progressDotSize = isSmall ? 5 : 6;
+  const progressDotGap = isSmall ? 4 : 6;
+  const carTitleFontSize = isSmall ? FONT_SIZES.lg : 24;
+  const locationIconSize = isSmall ? 14 : 16;
+  const locationFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const metricIconSize = isSmall ? 12 : 15;
+  const metricTextFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const priceFontSize = isSmall ? 22 : 28;
+  const contactButtonSize = isSmall ? 40 : 48;
+  const contactIconSize = isSmall ? 18 : 21;
+  const featureCardSize = isSmall ? 70 : 90;
+  const featureIconSize = isSmall ? 18 : 24;
+  const featureValueFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const sectionTitleFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const descriptionFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const profileImageSize = isSmall ? 48 : 56;
+  const addFriendBadgeSize = isSmall ? 16 : 20;
+  const addFriendIconSize = isSmall ? 10 : 12;
+  const sellerNameFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const verifiedBadgeSize = isSmall ? 14 : 18;
+  const accountTypeFontSize = isSmall ? 9 : 10;
+  const postedTimeFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const reportButtonHeight = isSmall ? 42 : 48;
+  const reportButtonFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const relatedAdsTitleFontSize = isSmall ? FONT_SIZES.md : FONT_SIZES.lg;
 
   // Load ad from store or database
   useEffect(() => {
@@ -307,7 +365,6 @@ export default function AdDetailScreen() {
         const result = await adService.getAdById(params.adId);
         
         if (result.error || !result.ad) {
-          console.error('[AdDetail] Error loading ad:', result.error);
           setAd(null);
         } else {
           // Convert database ad to store format
@@ -315,7 +372,6 @@ export default function AdDetailScreen() {
           setAd(convertedAd);
         }
       } catch (error) {
-        console.error('[AdDetail] Exception loading ad:', error);
         setAd(null);
       } finally {
         setIsLoadingAd(false);
@@ -340,7 +396,6 @@ export default function AdDetailScreen() {
           setUserProfile(result.profile);
         }
       } catch (error) {
-        console.error('[AdDetail] Error fetching user profile:', error);
         setUserProfile(null);
       }
     };
@@ -351,6 +406,7 @@ export default function AdDetailScreen() {
 
   // Auto-slide images every 3 seconds with smooth transitions (must be called before early returns)
   const images = ad?.uploadedImages || [];
+  
   useEffect(() => {
     if (!ad || images.length <= 1) {
       return;
@@ -442,16 +498,10 @@ export default function AdDetailScreen() {
           }
         } catch (error) {
           // Silently handle errors in callback
-          if (__DEV__) {
-            console.warn('[AdDetail] Error handling real-time update:', error);
-          }
         }
       });
     } catch (error) {
       // Silently handle subscription creation errors
-      if (__DEV__) {
-        console.warn('[AdDetail] Failed to create ad subscription:', error);
-      }
     }
 
     return () => {
@@ -460,9 +510,6 @@ export default function AdDetailScreen() {
           unsubscribe();
         } catch (error) {
           // Silently handle cleanup errors
-          if (__DEV__) {
-            console.warn('[AdDetail] Error cleaning up ad subscription:', error);
-          }
         }
       }
     };
@@ -494,7 +541,6 @@ export default function AdDetailScreen() {
       try {
         const result = await adService.getRelatedAds(ad.category, ad.id, 5);
         if (result.error) {
-          console.error('[AdDetail] Error fetching related ads:', result.error);
           // Fallback to store ads if database fetch fails
           const fallbackAds = ads.filter((a) => a.id !== ad.id && a.category === ad.category).slice(0, 5);
           setRelatedAds(fallbackAds);
@@ -504,7 +550,6 @@ export default function AdDetailScreen() {
           setRelatedAds(convertedAds);
         }
       } catch (error) {
-        console.error('[AdDetail] Exception fetching related ads:', error);
         // Fallback to store ads
         const fallbackAds = ads.filter((a) => a.id !== ad.id && a.category === ad.category).slice(0, 5);
         setRelatedAds(fallbackAds);
@@ -565,7 +610,25 @@ export default function AdDetailScreen() {
   };
 
   const handleViewStory = () => {
-    // TODO: Navigate to story view
+    // Check if ad has stories
+    const stories = ad?.uploadedStories || [];
+    if (stories.length === 0) {
+      Alert.alert(
+        'No Stories',
+        'This ad does not have any story images.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    // Navigate to preview story page with stories and adId
+    router.push({
+      pathname: '/story/preview-story',
+      params: {
+        stories: JSON.stringify(stories),
+        adId: ad.id,
+      },
+    });
   };
 
   const handleCall = () => {
@@ -620,18 +683,24 @@ export default function AdDetailScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.backButtonHeader}
+          style={[styles.backButtonHeader, { width: backButtonSize, height: backButtonSize }]}
           onPress={handleBack}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.viewStoryButton}
+          style={[
+            styles.viewStoryButton,
+            {
+              paddingHorizontal: viewStoryButtonPaddingH,
+              paddingVertical: viewStoryButtonPaddingV,
+            }
+          ]}
           onPress={handleViewStory}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.viewStoryButtonText}>View Story</Text>
+          <Text style={[styles.viewStoryButtonText, { fontSize: viewStoryButtonFontSize }]}>View Story</Text>
         </TouchableOpacity>
       </View>
 
@@ -642,7 +711,7 @@ export default function AdDetailScreen() {
         
         {/* Hero Image Slider */}
         <TouchableOpacity
-          style={styles.heroImageContainer}
+          style={[styles.heroImageContainer, { height: heroImageHeight }]}
           onPress={() => {
             router.push({
               pathname: '/ads/ad-images',
@@ -670,40 +739,61 @@ export default function AdDetailScreen() {
               scrollEventThrottle={16}
               onScrollToIndexFailed={handleScrollToIndexFailed}
               getItemLayout={(_, index) => ({
-                length: SCREEN_WIDTH,
-                offset: SCREEN_WIDTH * index,
+                length: screenWidth,
+                offset: screenWidth * index,
                 index,
               })}
-              renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item }}
-                  style={styles.heroImage}
-                  resizeMode="cover"
-                />
+              renderItem={({ item, index }) => (
+                <View style={{ width: screenWidth, height: heroImageHeight, overflow: 'hidden' }}>
+                  <Image
+                    source={{ uri: item }}
+                    style={[styles.heroImage, { height: heroImageHeight, width: screenWidth }]}
+                    resizeMode="cover"
+                    onError={() => {
+                      // Image load error handled silently
+                    }}
+                    onLoad={() => {
+                      // Image loaded successfully
+                    }}
+                  />
+                </View>
               )}
               decelerationRate="fast"
-              snapToInterval={SCREEN_WIDTH}
+              snapToInterval={screenWidth}
               snapToAlignment="start"
             />
           ) : (
             <View style={styles.heroImagePlaceholder}>
-              <IconSymbol name="photo" size={48} color="#9CA3AF" />
+              <IconSymbol name="photo" size={isSmall ? 40 : 48} color="#9CA3AF" />
             </View>
           )}
           {/* SPOTLIGHT Badge */}
-          <View style={styles.spotlightBadge}>
-            <IconSymbol name="flame.fill" size={16} color="#FFD700" />
-            <Text style={styles.spotlightText}>SPOTLIGHT</Text>
+          <View style={[
+            styles.spotlightBadge,
+            {
+              paddingHorizontal: spotlightPaddingH,
+              paddingVertical: spotlightPaddingV,
+              top: isSmall ? SPACING.md : SPACING.base,
+              left: isSmall ? SPACING.md : SPACING.base,
+            }
+          ]}>
+            <IconSymbol name="flame.fill" size={spotlightIconSize} color="#FFD700" />
+            <Text style={[styles.spotlightText, { fontSize: spotlightFontSize }]}>SPOTLIGHT</Text>
           </View>
           
           {/* Progress Dots - Overlay on Image */}
           {images.length > 1 && (
-            <View style={styles.progressDotsContainer}>
+            <View style={[styles.progressDotsContainer, { gap: progressDotGap, bottom: isSmall ? SPACING.sm : SPACING.md }]}>
               {images.map((_, index) => (
                 <View
                   key={index}
                   style={[
                     styles.progressDot,
+                    {
+                      width: progressDotSize,
+                      height: progressDotSize,
+                      borderRadius: progressDotSize / 2,
+                    },
                     index === currentImageIndex && styles.progressDotActive,
                   ]}
                 />
@@ -713,160 +803,166 @@ export default function AdDetailScreen() {
         </TouchableOpacity>
 
         {/* Car Title */}
-        <View style={styles.titleSection}>
-          <Text style={styles.carTitle}>{ad.itemName || 'Vehicle'}</Text>
+        <View style={[styles.titleSection, { paddingHorizontal: horizontalPadding }]}>
+          <Text style={[styles.carTitle, { fontSize: carTitleFontSize }]}>{ad.itemName || 'Vehicle'}</Text>
         </View>
 
         {/* Location */}
         {ad.location && (
-          <View style={styles.locationRow}>
-            <LocationIcon width={16} height={16} />
-            <Text style={styles.locationText}>{ad.location}</Text>
+          <View style={[styles.locationRow, { paddingHorizontal: horizontalPadding }]}>
+            <LocationIcon width={locationIconSize} height={locationIconSize} />
+            <Text style={[styles.locationText, { fontSize: locationFontSize }]}>{ad.location}</Text>
           </View>
         )}
 
         {/* Engagement Stats */}
-        <View style={styles.engagementRow}>
+        <View style={[styles.engagementRow, { paddingHorizontal: horizontalPadding, gap: isSmall ? SPACING.sm : SPACING.base }]}>
           <View style={styles.metric}>
-            <ViewerIcon width={15} height={11} />
-            <Text style={styles.metricText}>{formatNumber(views)}</Text>
+            <ViewerIcon width={metricIconSize} height={Math.floor(metricIconSize * 0.73)} />
+            <Text style={[styles.metricText, { fontSize: metricTextFontSize }]}>{formatNumber(views)}</Text>
           </View>
           <View style={styles.metric}>
-            <LoveIcon width={13} height={12} />
-            <Text style={styles.metricText}>{formatNumber(likes)}</Text>
+            <LoveIcon width={metricIconSize} height={Math.floor(metricIconSize * 0.92)} />
+            <Text style={[styles.metricText, { fontSize: metricTextFontSize }]}>{formatNumber(likes)}</Text>
           </View>
           <View style={styles.metric}>
-            <ShareIcon width={11} height={12} />
-            <Text style={styles.metricText}>{formatNumber(shares)}</Text>
+            <ShareIcon width={Math.floor(metricIconSize * 0.85)} height={metricIconSize} />
+            <Text style={[styles.metricText, { fontSize: metricTextFontSize }]}>{formatNumber(shares)}</Text>
           </View>
         </View>
 
         {/* Price and Contact Actions */}
-        <View style={styles.priceSection}>
-          <Text style={styles.price}>
+        <View style={[styles.priceSection, { paddingHorizontal: horizontalPadding, marginBottom: isSmall ? SPACING.lg : 24 }]}>
+          <Text style={[styles.price, { fontSize: priceFontSize }]}>
             {ad.currency} {parseInt(ad.amount || '0').toLocaleString()}
           </Text>
-          <View style={styles.contactActions}>
+          <View style={[styles.contactActions, { gap: isSmall ? SPACING.sm : 12 }]}>
             <TouchableOpacity
-              style={[styles.contactButton, styles.callButton]}
+              style={[styles.contactButton, styles.callButton, { width: contactButtonSize, height: contactButtonSize }]}
               onPress={handleCall}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <PhoneIcon width={21} height={21} color="#1E40AF" />
+              <PhoneIcon width={contactIconSize} height={contactIconSize} color="#1E40AF" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.contactButton, styles.messageButton]}
+              style={[styles.contactButton, styles.messageButton, { width: contactButtonSize, height: contactButtonSize }]}
               onPress={handleMessage}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <MessageIcon width={20} height={19} color="#115E59" />
+              <MessageIcon width={contactIconSize} height={Math.floor(contactIconSize * 0.9)} color="#115E59" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.contactButton, styles.notifyButton]}
+              style={[styles.contactButton, styles.notifyButton, { width: contactButtonSize, height: contactButtonSize }]}
               onPress={handleNotify}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <AlertIcon width={21} height={22} color="#991B1B" />
+              <AlertIcon width={contactIconSize} height={Math.floor(contactIconSize * 1.05)} color="#991B1B" />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Key Features */}
-        <View style={styles.featuresSection}>
-          <View style={styles.featureCard}>
-            <CalendarIcon width={24} height={24} color="#9CA3AF" />
-            <Text style={styles.featureValue}>
+        <View style={[styles.featuresSection, { paddingHorizontal: horizontalPadding, gap: isSmall ? SPACING.sm : 12, marginBottom: isSmall ? SPACING.lg : 24 }]}>
+          <View style={[styles.featureCard, { width: featureCardSize, height: featureCardSize, padding: isSmall ? SPACING.sm : SPACING.base }]}>
+            <CalendarIcon width={featureIconSize} height={featureIconSize} color="#9CA3AF" />
+            <Text style={[styles.featureValue, { fontSize: featureValueFontSize }]}>
               {ad.vanYearOfProduction || '2024'}
             </Text>
           </View>
-          <View style={styles.featureCard}>
-            <SpeedometerIcon width={23} height={21} color="#9CA3AF" />
-            <Text style={styles.featureValue}>
+          <View style={[styles.featureCard, { width: featureCardSize, height: featureCardSize, padding: isSmall ? SPACING.sm : SPACING.base }]}>
+            <SpeedometerIcon width={Math.floor(featureIconSize * 0.96)} height={Math.floor(featureIconSize * 0.88)} color="#9CA3AF" />
+            <Text style={[styles.featureValue, { fontSize: featureValueFontSize }]}>
               {ad.mileage ? `${ad.mileage}` : '80,000'}
             </Text>
           </View>
-          <View style={styles.featureCard}>
-            <FuelIcon width={22} height={22} color="#9CA3AF" />
-            <Text style={styles.featureValue}>Petrol</Text>
+          <View style={[styles.featureCard, { width: featureCardSize, height: featureCardSize, padding: isSmall ? SPACING.sm : SPACING.base }]}>
+            <FuelIcon width={Math.floor(featureIconSize * 0.92)} height={Math.floor(featureIconSize * 0.92)} color="#9CA3AF" />
+            <Text style={[styles.featureValue, { fontSize: featureValueFontSize }]}>Petrol</Text>
           </View>
-          <View style={styles.featureCard}>
-            <GearIcon width={15} height={20} color="#9CA3AF" />
-            <Text style={styles.featureValue} numberOfLines={1}>Automatic</Text>
+          <View style={[styles.featureCard, { width: featureCardSize, height: featureCardSize, padding: isSmall ? SPACING.sm : SPACING.base }]}>
+            <GearIcon width={Math.floor(featureIconSize * 0.63)} height={Math.floor(featureIconSize * 0.83)} color="#9CA3AF" />
+            <Text style={[styles.featureValue, { fontSize: featureValueFontSize }]} numberOfLines={1}>Automatic</Text>
           </View>
         </View>
 
         {/* Description */}
         {ad.description && (
-          <View style={styles.descriptionSection}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.descriptionText}>{ad.description}</Text>
+          <View style={[styles.descriptionSection, { paddingHorizontal: horizontalPadding, marginBottom: isSmall ? SPACING.lg : 24 }]}>
+            <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>Description</Text>
+            <Text style={[styles.descriptionText, { fontSize: descriptionFontSize }]}>{ad.description}</Text>
           </View>
         )}
 
         {/* Specifications */}
-        <View style={styles.specificationsSection}>
-          <View style={styles.specGrid}>
-            {/* Row 1 */}
-            <View style={styles.specGridItem}>
-              <Text style={styles.specLabel}>Make</Text>
-              <Text style={styles.specValue}>{ad.vanMake || 'BMW'}</Text>
+        <View style={[styles.specificationsSection, { paddingHorizontal: horizontalPadding, marginBottom: isSmall ? SPACING.lg : 24 }]}>
+          <View style={[styles.specificationsCard, { padding: isSmall ? SPACING.md : SPACING.lg }]}>
+            <View style={[styles.specGrid, { gap: isSmall ? SPACING.md : SPACING.base, marginBottom: isSmall ? SPACING.md : SPACING.base }]}>
+              {/* Row 1 */}
+              <View style={styles.specGridItem}>
+                <Text style={[styles.specLabel, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm, marginBottom: isSmall ? 6 : 8 }]}>Make</Text>
+                <Text style={[styles.specValue, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]} numberOfLines={1}>
+                  {ad.vanMake || '---'}
+                </Text>
+              </View>
+              <View style={styles.specGridItem}>
+                <Text style={[styles.specLabel, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm, marginBottom: isSmall ? 6 : 8 }]}>Model</Text>
+                <Text style={[styles.specValue, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]} numberOfLines={1}>
+                  {ad.vanModel || ad.itemName || '---'}
+                </Text>
+              </View>
+              <View style={styles.specGridItem}>
+                <Text style={[styles.specLabel, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm, marginBottom: isSmall ? 6 : 8 }]}>Seats</Text>
+                <Text style={[styles.specValue, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>---</Text>
+              </View>
             </View>
-            <View style={styles.specGridItem}>
-              <Text style={styles.specLabel}>Model</Text>
-              <Text style={styles.specValue}>{ad.vanModel || ad.itemName || '520 M Sports'}</Text>
-            </View>
-            <View style={styles.specGridItem}>
-              <Text style={styles.specLabel}>Seats</Text>
-              <Text style={styles.specValue}>05</Text>
-            </View>
-          </View>
-          <View style={styles.specGrid}>
-            {/* Row 2 */}
-            <View style={styles.specGridItem}>
-              <Text style={styles.specLabel}>Color</Text>
-              <Text style={styles.specValue}>White</Text>
-            </View>
-            <View style={styles.specGridItem}>
-              <Text style={styles.specLabel}>Door</Text>
-              <Text style={styles.specValue}>04</Text>
-            </View>
-            <View style={styles.specGridItem}>
-              <Text style={styles.specLabel}>Trim</Text>
-              <Text style={styles.specValue}>--</Text>
+            <View style={[styles.specGrid, { gap: isSmall ? SPACING.md : SPACING.base }]}>
+              {/* Row 2 */}
+              <View style={styles.specGridItem}>
+                <Text style={[styles.specLabel, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm, marginBottom: isSmall ? 6 : 8 }]}>Color</Text>
+                <Text style={[styles.specValue, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>---</Text>
+              </View>
+              <View style={styles.specGridItem}>
+                <Text style={[styles.specLabel, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm, marginBottom: isSmall ? 6 : 8 }]}>Door</Text>
+                <Text style={[styles.specValue, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>---</Text>
+              </View>
+              <View style={styles.specGridItem}>
+                <Text style={[styles.specLabel, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm, marginBottom: isSmall ? 6 : 8 }]}>Trim</Text>
+                <Text style={[styles.specValue, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>---</Text>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Seller Information */}
-        <View style={styles.sellerSection}>
+        <View style={[styles.sellerSection, { paddingHorizontal: horizontalPadding, marginBottom: isSmall ? SPACING.lg : 24 }]}>
           <View style={styles.sellerInfo}>
             <View style={styles.profileImageContainer}>
               {profileImageUrl ? (
                 <Image
                   source={{ uri: profileImageUrl }}
-                  style={styles.profileImage}
+                  style={[styles.profileImage, { width: profileImageSize, height: profileImageSize, borderRadius: profileImageSize / 2 }]}
                   resizeMode="cover"
                 />
               ) : (
                 <Image
                   source={require('@/assets/images/message-avatar.png')}
-                  style={styles.profileImage}
+                  style={[styles.profileImage, { width: profileImageSize, height: profileImageSize, borderRadius: profileImageSize / 2 }]}
                   resizeMode="cover"
                 />
               )}
-              <View style={styles.addFriendBadge}>
-                <IconSymbol name="plus" size={12} color="#FFFFFF" />
+              <View style={[styles.addFriendBadge, { width: addFriendBadgeSize, height: addFriendBadgeSize, borderRadius: addFriendBadgeSize / 2 }]}>
+                <IconSymbol name="plus" size={addFriendIconSize} color="#FFFFFF" />
               </View>
             </View>
             <View style={styles.sellerDetails}>
               <View style={styles.sellerNameRow}>
-                <Text style={styles.sellerName}>{sellerName}</Text>
+                <Text style={[styles.sellerName, { fontSize: sellerNameFontSize }]}>{sellerName}</Text>
                 {isVerified && (
-                  <View style={styles.verifiedBadge}>
-                    <VerifyIcon width={16} height={16} />
+                  <View style={[styles.verifiedBadge, { width: verifiedBadgeSize, height: verifiedBadgeSize }]}>
+                    <VerifyIcon width={verifiedBadgeSize} height={verifiedBadgeSize} />
                   </View>
                 )}
               </View>
               {userProfile?.account_type && (
-                <View style={styles.accountTypeBadge}>
-                  <Text style={styles.accountTypeText}>
+                <View style={[styles.accountTypeBadge, { minWidth: isSmall ? 75 : 87, height: isSmall ? 15 : 17 }]}>
+                  <Text style={[styles.accountTypeText, { fontSize: accountTypeFontSize }]}>
                     {userProfile.account_type === 'trade' ? 'Trade Seller' : 
                      userProfile.account_type === 'private' ? 'Private Seller' : 
                      userProfile.account_type === 'brand' ? 'Brand' : 
@@ -876,26 +972,26 @@ export default function AdDetailScreen() {
               )}
             </View>
             <View style={styles.postedTimeContainer}>
-              <Text style={styles.postedTimeLabel}>Posted</Text>
-              <Text style={styles.postedTime}>{formatTimeAgo(ad.createdAt)}</Text>
+              <Text style={[styles.postedTimeLabel, { fontSize: postedTimeFontSize }]}>Posted</Text>
+              <Text style={[styles.postedTime, { fontSize: postedTimeFontSize }]}>{formatTimeAgo(ad.createdAt)}</Text>
             </View>
           </View>
         </View>
 
         {/* Report Ad Button */}
-        <View style={styles.reportButtonContainer}>
+        <View style={[styles.reportButtonContainer, { paddingHorizontal: horizontalPadding, marginBottom: isSmall ? SPACING.lg : 32 }]}>
           <TouchableOpacity
-            style={styles.reportButton}
+            style={[styles.reportButton, { height: reportButtonHeight }]}
             onPress={handleReportAd}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.reportButtonText}>Report Ad</Text>
+            <Text style={[styles.reportButtonText, { fontSize: reportButtonFontSize }]}>Report Ad</Text>
           </TouchableOpacity>
         </View>
 
         {/* Related Ads Section */}
         {relatedAds.length > 0 && (
-          <View style={styles.relatedAdsSection}>
-            <Text style={styles.relatedAdsTitle}>Related Ads</Text>
+          <View style={[styles.relatedAdsSection, { paddingHorizontal: horizontalPadding, marginBottom: isSmall ? SPACING.lg : 24 }]}>
+            <Text style={[styles.relatedAdsTitle, { fontSize: relatedAdsTitleFontSize }]}>Related Ads</Text>
             <FlatList
               data={relatedAds}
               horizontal
@@ -952,27 +1048,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: SPACING.base,
+    // paddingTop and paddingHorizontal set dynamically
   },
   backButtonHeader: {
-    width: 40,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   viewStoryButton: {
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 8,
+    // paddingHorizontal and paddingVertical set dynamically
   },
   viewStoryButtonText: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   scrollView: {
     flex: 1,
@@ -982,13 +1075,14 @@ const styles = StyleSheet.create({
   },
   heroImageContainer: {
     width: '100%',
-    height: 300,
     position: 'relative',
     overflow: 'hidden',
+    // height set dynamically
   },
   heroImage: {
-    width: SCREEN_WIDTH,
-    height: 300,
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    // height set dynamically
   },
   heroImagePlaceholder: {
     width: '100%',
@@ -999,107 +1093,98 @@ const styles = StyleSheet.create({
   },
   spotlightBadge: {
     position: 'absolute',
-    top: 16,
-    left: 16,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
     borderRadius: 9999,
-    gap: 6,
+    gap: SPACING.xs,
+    // top, left, paddingHorizontal, and paddingVertical set dynamically
   },
   spotlightText: {
-    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
     letterSpacing: 0.5,
+    // fontSize set dynamically
   },
   progressDotsContainer: {
     position: 'absolute',
-    bottom: 12,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    // bottom and gap set dynamically
   },
   progressDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
     backgroundColor: '#D1D5DB',
+    // width, height, and borderRadius set dynamically
   },
   progressDotActive: {
     backgroundColor: '#4CAF50',
   },
   titleSection: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    marginBottom: 8,
+    paddingTop: SPACING.base,
+    marginBottom: SPACING.sm,
+    // paddingHorizontal set dynamically
   },
   carTitle: {
-    fontSize: 24,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    gap: SPACING.xs,
+    marginBottom: SPACING.md,
+    // paddingHorizontal set dynamically
   },
   locationText: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   engagementRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 16,
     marginBottom: 20,
+    // paddingHorizontal and gap set dynamically, marginBottom adjusted inline
   },
   metric: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING.xs,
   },
   metricText: {
-    fontSize: 14,
     fontWeight: '500',
     color: '#374151',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   priceSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    // marginBottom and paddingHorizontal set dynamically
   },
   price: {
-    fontSize: 28,
     fontWeight: '700',
     color: '#4CAF50',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   contactActions: {
     flexDirection: 'row',
-    gap: 12,
+    // gap set dynamically
   },
   contactButton: {
-    width: 48,
-    height: 48,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    // width and height set dynamically
   },
   callButton: {
     backgroundColor: '#DBEAFE',
@@ -1112,23 +1197,18 @@ const styles = StyleSheet.create({
   },
   featuresSection: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 24,
     justifyContent: 'center',
+    // marginBottom, paddingHorizontal and gap set dynamically
   },
   featureCard: {
-    width: 90,
-    height: 90,
     borderRadius: 16,
-    padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: SPACING.sm,
     backgroundColor: '#F9FAFB',
+    // width, height, and padding set dynamically
   },
   featureValue: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#9CA3AF',
     fontFamily: 'Source Sans Pro',
@@ -1137,73 +1217,65 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     flexShrink: 0,
     width: '100%',
+    // fontSize set dynamically
   },
   descriptionSection: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    // marginBottom and paddingHorizontal set dynamically
   },
   sectionTitle: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#000000',
     fontFamily: 'Source Sans Pro',
-    marginBottom: 12,
+    marginBottom: SPACING.md,
     lineHeight: 14,
     letterSpacing: 0,
+    // fontSize set dynamically
   },
   descriptionText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#374151',
     fontFamily: 'Source Sans Pro',
     lineHeight: 12,
     letterSpacing: 0,
+    // fontSize set dynamically
   },
   specificationsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    // marginBottom and paddingHorizontal set dynamically
   },
-  specTitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#000000',
-    fontFamily: 'Source Sans Pro',
-    marginBottom: 16,
-    lineHeight: 14,
-    letterSpacing: 0,
+  specificationsCard: {
+    backgroundColor: '#FCFCFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    // padding set dynamically
   },
   specGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    width: '100%',
+    // gap and marginBottom set dynamically
   },
   specGridItem: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   specLabel: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000000',
+    fontWeight: '600',
+    color: '#1F2937',
     fontFamily: 'Source Sans Pro',
-    marginBottom: 8,
-    lineHeight: 12,
-    letterSpacing: 0,
-    textAlign: 'center',
+    lineHeight: 16,
+    letterSpacing: 0.2,
+    // fontSize and marginBottom set dynamically
   },
   specValue: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'Source Sans Pro',
-    lineHeight: 12,
+    lineHeight: 18,
     letterSpacing: 0,
-    textAlign: 'left',
+    // fontSize set dynamically
   },
   sellerSection: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    // marginBottom and paddingHorizontal set dynamically
   },
   sellerInfo: {
     flexDirection: 'row',
@@ -1214,24 +1286,20 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   profileImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
     borderWidth: 2,
     borderColor: '#4CAF50',
+    // width, height, and borderRadius set dynamically
   },
   addFriendBadge: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
     backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
+    // width, height, and borderRadius set dynamically
   },
   sellerDetails: {
     flex: 1,
@@ -1245,83 +1313,79 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sellerName: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   verifiedBadge: {
-    width: 18,
-    height: 18,
+    // width and height set dynamically
   },
   accountTypeBadge: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 2,
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.base,
     alignSelf: 'flex-start',
-    minWidth: 87,
-    height: 17,
     backgroundColor: '#F0FDF4',
     borderRadius: 4,
-    marginTop: 4,
+    marginTop: SPACING.xs,
+    // minWidth and height set dynamically
   },
   accountTypeText: {
-    fontSize: 10,
     fontWeight: '400',
     color: '#15803D',
     fontFamily: 'Source Sans Pro',
     lineHeight: 13,
     textAlign: 'center',
+    // fontSize set dynamically
   },
   postedTimeContainer: {
     alignItems: 'flex-end',
   },
   postedTimeLabel: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   postedTime: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   reportButtonContainer: {
     width: '100%',
-    paddingHorizontal: 16,
-    marginBottom: 32,
     alignItems: 'center',
+    // marginBottom and paddingHorizontal set dynamically
   },
   reportButton: {
     width: '100%',
     maxWidth: 400,
-    height: 48,
     borderWidth: 2,
     borderColor: '#EF4444',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    // height set dynamically
   },
   reportButtonText: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#EF4444',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   relatedAdsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    // marginBottom and paddingHorizontal set dynamically
   },
   relatedAdsTitle: {
-    fontSize: 18,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
-    marginBottom: 16,
+    marginBottom: SPACING.base,
+    // fontSize set dynamically
   },
   relatedAdsList: {
     gap: 6,
@@ -1338,21 +1402,21 @@ const styles = StyleSheet.create({
   },
   relatedAdImageContainer: {
     width: '100%',
-    height: 110,
     position: 'relative',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     overflow: 'hidden',
+    // height set dynamically
   },
   relatedAdImage: {
     width: '100%',
-    height: '100%',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
+    // height set dynamically
   },
   relatedAdImagePlaceholder: {
     width: '100%',
@@ -1367,65 +1431,61 @@ const styles = StyleSheet.create({
   },
   relatedAdSpotlightBadge: {
     position: 'absolute',
-    top: 6,
-    left: 6,
+    top: SPACING.xs,
+    left: SPACING.xs,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
     borderRadius: 16,
     gap: 3,
+    // paddingHorizontal and paddingVertical set dynamically
   },
   relatedAdSpotlightText: {
-    fontSize: 9,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
     letterSpacing: 0.5,
+    // fontSize set dynamically
   },
   imageCountBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: SPACING.xs,
+    right: SPACING.xs,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
     borderRadius: 12,
     gap: 3,
+    // paddingHorizontal and paddingVertical set dynamically
   },
   imageCountText: {
-    fontSize: 9,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   relatedAdContent: {
-    padding: 5,
-    paddingBottom: 6,
-    paddingHorizontal: 5,
     backgroundColor: '#F9FAFB',
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     overflow: 'visible',
+    // padding set dynamically
   },
   relatedAdTitle: {
-    fontSize: 13,
     fontWeight: '700',
     color: '#111827',
     fontFamily: 'system-ui',
     marginBottom: 3,
     lineHeight: 16,
+    // fontSize set dynamically
   },
   relatedAdPrice: {
-    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
     fontFamily: 'system-ui',
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
     lineHeight: 18,
+    // fontSize set dynamically
   },
   relatedAdSellerContainer: {
     flexDirection: 'row',
@@ -1441,11 +1501,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   relatedAdSellerAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#4CAF50',
+    // width, height, and borderRadius set dynamically
   },
   relatedAdSellerInfoRight: {
     flex: 1,
@@ -1463,15 +1521,15 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   relatedAdSellerName: {
-    fontSize: 11,
     fontWeight: '600',
     color: '#111827',
     fontFamily: 'system-ui',
     flexShrink: 1,
     minWidth: 0,
     lineHeight: 14,
-    marginRight: 4,
+    marginRight: SPACING.xs,
     includeFontPadding: false,
+    // fontSize set dynamically
   },
   relatedAdLocation: {
     flexDirection: 'row',
@@ -1479,16 +1537,16 @@ const styles = StyleSheet.create({
     gap: 2,
     flexShrink: 1,
     justifyContent: 'center',
-    maxWidth: 50,
     marginLeft: 2,
+    // maxWidth set dynamically
   },
   relatedAdLocationText: {
-    fontSize: 9,
     fontWeight: '400',
     color: '#9CA3AF',
     fontFamily: 'system-ui',
     flexShrink: 1,
     includeFontPadding: false,
+    // fontSize set dynamically
   },
   relatedAdSellerTypeBadge: {
     alignSelf: 'flex-start',
@@ -1496,7 +1554,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     backgroundColor: '#F0FDF4',
     borderRadius: 5,
-    minHeight: 14,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'visible',
@@ -1504,9 +1561,9 @@ const styles = StyleSheet.create({
     margin: 0,
     marginTop: 0,
     position: 'relative',
+    // minHeight set dynamically
   },
   relatedAdSellerTypeText: {
-    fontSize: 8,
     fontWeight: '500',
     color: '#15803D',
     fontFamily: 'system-ui',
@@ -1517,6 +1574,7 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
     margin: 0,
     padding: 0,
+    // fontSize set dynamically
   },
   loadingContainer: {
     flex: 1,

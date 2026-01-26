@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
 import {
@@ -11,10 +12,24 @@ import {
     SearchTabIcon,
     StoryTabIcon,
 } from '@/components/icons/TabIcons';
+import { FONT_SIZES, useResponsive } from '@/utils/responsive';
 
 export default function TabLayout() {
   const activeColor = '#4CAF50';
   const inactiveColor = '#374151';
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
+
+  // Calculate responsive tab bar sizes
+  const tabBarHeight = isSmall ? 48 : 56;
+  const tabBarPaddingTop = isSmall ? 4 : 6;
+  const tabIconSize = isSmall ? 20 : 24;
+  const tabLabelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const badgeMinSize = isSmall ? 18 : 20;
+  const badgeFontSize = isSmall ? 9 : 10;
+  const badgeTopOffset = isSmall ? -8 : -6;
+  const badgeRightOffset = isSmall ? -10 : -8;
+  const badgePaddingH = isSmall ? 4 : 5;
 
   return (
     <Tabs
@@ -27,13 +42,13 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
-          height: Platform.OS === 'ios' ? 70 : 58,
-          paddingBottom: Platform.OS === 'ios' ? 10 : 4,
-          paddingTop: 6,
-          marginBottom: Platform.OS === 'ios' ? 8 : 4,
+          height: tabBarHeight + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: tabBarPaddingTop,
+          overflow: 'visible', // Allow badges to extend beyond tab bar
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: tabLabelFontSize,
           fontWeight: '500',
           fontFamily: 'system-ui',
         },
@@ -43,7 +58,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <HomeTabIcon size={24} color={focused ? activeColor : inactiveColor} />
+            <HomeTabIcon size={tabIconSize} color={focused ? activeColor : inactiveColor} />
           ),
         }}
       />
@@ -52,7 +67,7 @@ export default function TabLayout() {
         options={{
           title: 'Search',
           tabBarIcon: ({ color, focused }) => (
-            <SearchTabIcon size={24} color={focused ? activeColor : inactiveColor} />
+            <SearchTabIcon size={tabIconSize} color={focused ? activeColor : inactiveColor} />
           ),
         }}
       />
@@ -61,7 +76,7 @@ export default function TabLayout() {
         options={{
           title: 'Scan',
           tabBarIcon: ({ color, focused }) => (
-            <ScanTabIcon size={24} color={focused ? activeColor : inactiveColor} />
+            <ScanTabIcon size={tabIconSize} color={focused ? activeColor : inactiveColor} />
           ),
         }}
       />
@@ -71,9 +86,19 @@ export default function TabLayout() {
           title: 'Message',
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
-              <MessageTabIcon size={24} color={focused ? activeColor : inactiveColor} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>13</Text>
+              <MessageTabIcon size={tabIconSize} color={focused ? activeColor : inactiveColor} />
+              <View style={[
+                styles.badge,
+                {
+                  height: badgeMinSize,
+                  borderRadius: badgeMinSize / 2,
+                  minWidth: badgeMinSize,
+                  paddingHorizontal: badgePaddingH,
+                  top: badgeTopOffset,
+                  right: badgeRightOffset,
+                }
+              ]}>
+                <Text style={[styles.badgeText, { fontSize: badgeFontSize, lineHeight: badgeFontSize }]}>13</Text>
               </View>
             </View>
           ),
@@ -84,7 +109,7 @@ export default function TabLayout() {
         options={{
           title: 'Story',
           tabBarIcon: ({ color, focused }) => (
-            <StoryTabIcon size={24} color={focused ? activeColor : inactiveColor} />
+            <StoryTabIcon size={tabIconSize} color={focused ? activeColor : inactiveColor} />
           ),
         }}
       />
@@ -93,7 +118,7 @@ export default function TabLayout() {
         options={{
           title: 'My Profile',
           tabBarIcon: ({ color, focused }) => (
-            <ProfileTabIcon size={24} color={focused ? activeColor : inactiveColor} />
+            <ProfileTabIcon size={tabIconSize} color={focused ? activeColor : inactiveColor} />
           ),
         }}
       />
@@ -113,25 +138,22 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   iconContainer: {
     position: 'relative',
+    overflow: 'visible', // Allow badge to extend beyond container
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -8,
     backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: '#FFFFFF',
+    zIndex: 10, // Ensure badge is above other elements
+    // height, borderRadius, minWidth, paddingHorizontal, top, and right set dynamically
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
     fontWeight: '700',
     fontFamily: 'system-ui',
+    // fontSize and lineHeight set dynamically
   },
 });

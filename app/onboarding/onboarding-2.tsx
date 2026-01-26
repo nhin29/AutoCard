@@ -1,11 +1,11 @@
 import { OnboardingBackground } from '@/components/onboarding/onboarding-background';
 import { OnboardingContent } from '@/components/onboarding/onboarding-content';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { useResponsive } from '@/utils/responsive';
 
 /**
  * Second Onboarding Screen
@@ -19,6 +19,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
  */
 export default function OnboardingScreen2() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { isSmall } = useResponsive();
 
   const handleBack = () => {
     router.back();
@@ -39,154 +42,191 @@ export default function OnboardingScreen2() {
     router.push('/onboarding/onboarding-3');
   };
 
+  // Calculate responsive sizes based on screen dimensions
+  const skipFontSize = isSmall ? 14 : 15;
+  const skipIconSize = isSmall ? 14 : 16;
+  const backIconSize = isSmall ? 18 : 20;
+  const topBarPadding = isSmall ? 8 : 10;
+  const horizontalPadding = isSmall ? 16 : 20;
+  const buttonFontSize = isSmall ? 14 : 16; // Reduced on small phones
+  const buttonHeight = isSmall ? 44 : 52; // Reduced height on small phones
+  const buttonPaddingVertical = isSmall ? 12 : 14; // Reduced padding on small phones
+  const bottomPadding = isSmall ? 20 : 24;
+  
+  // Responsive chat message widths (percentage-based)
+  const chatMaxWidth = width * 0.85; // 85% of screen width
+  const messageBubbleMaxWidth = chatMaxWidth * 0.75; // 75% of chat area
+  
+  // Calculate responsive style values - more aggressive scaling for small phones
+  const chatGap = isSmall ? 2 : 6; // Reduced spacing between messages
+  const chatMarginBottom = isSmall ? 8 : 16;
+  const messagePadding = isSmall ? 8 : 12;
+  const messagePaddingVertical = isSmall ? 3 : 6; // Reduced vertical padding
+  const messagePaddingHorizontal = isSmall ? 10 : 16;
+  const messageFontSize = isSmall ? 12 : 15; // Reduced text size
+  const messageLineHeight = isSmall ? 16 : 22; // Tighter line height
+  const timestampFontSize = isSmall ? 10 : 12;
+  const messageBubbleMinHeight = isSmall ? 36 : 44; // Reduced min height for single-line messages
+  // Reduce message bubble width on small phones
+  const messageBubbleMaxWidthSmall = isSmall ? chatMaxWidth * 0.7 : messageBubbleMaxWidth;
+  const verificationGap = isSmall ? 8 : 10;
+  const verificationMarginBottom = isSmall ? 12 : 20;
+  const verificationMarginTop = isSmall ? 8 : 12;
+  const verificationRowGap = isSmall ? 8 : 12;
+  const verificationItemGap = isSmall ? 4 : 6;
+  const verificationItemMargin = isSmall ? 4 : 8; // Margin for verification items
+  const checkIconSize = isSmall ? 14 : 16; // Reduced from 18/20
+  const checkIconBorderRadius = isSmall ? 7 : 8; // Reduced from 9/10
+  const checkmarkFontSize = isSmall ? 9 : 10; // Reduced from 11/12
+  const verificationTextSize = isSmall ? 11 : 12; // Reduced from 13/14
+  const avatarSize = isSmall ? 18 : 20; // Smaller avatars on small phones
+  const avatarBorderRadius = isSmall ? 9 : 10;
+
   return (
     <OnboardingBackground>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <StatusBar style="dark" />
       
-      {/* Top Bar with Back and Skip Buttons */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <IconSymbol name="chevron.left" size={20} color="#000000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
-          <IconSymbol name="chevron.right" size={16} color="#000000" />
-        </TouchableOpacity>
-      </View>
+        {/* Top Bar with Back and Skip Buttons */}
+        <View style={[styles.topBar, { paddingHorizontal: horizontalPadding, paddingTop: topBarPadding }]}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+            <Text style={[styles.skipText, { fontSize: skipFontSize }]}>Skip</Text>
+            <IconSymbol name="chevron.right" size={skipIconSize} color="#000000" />
+          </TouchableOpacity>
+        </View>
 
-      {/* Central Content Area */}
-      <View style={styles.contentArea}>
-        {/* Chat Bubbles Section */}
-        <View style={styles.chatContainer}>
-          {/* Message 1 - Left side (faded, first message) */}
-          <View style={styles.firstMessageContainer}>
-            <View style={styles.firstMessageRow}>
-              <View style={styles.firstMessageAvatar}>
-                <Image
-                  source={require('@/assets/images/message-avatar.png')}
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
-              </View>
-              <View style={styles.firstMessageBubbleContainer}>
-                <View style={styles.firstMessageBubble}>
-                  <View style={styles.firstMessageContent}>
-                    {/* Empty content or placeholder */}
+        {/* Central Content Area - Takes available space */}
+        <View style={[styles.contentArea, { paddingTop: isSmall ? 12 : 20 }]}>
+          {/* Chat Bubbles Section */}
+          <View style={[styles.chatContainer, { paddingHorizontal: horizontalPadding, gap: chatGap, marginBottom: chatMarginBottom }]}>
+            {/* Message 1 - Left side (placeholder/empty message) */}
+            <View style={[styles.firstMessageContainer, { maxWidth: chatMaxWidth }]}>
+              <View style={styles.firstMessageRow}>
+                <View style={[styles.firstMessageAvatar, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}>
+                  <Image
+                    source={require('@/assets/images/message-avatar.png')}
+                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}
+                    resizeMode="cover"
+                  />
+                </View>
+                <View style={[styles.firstMessageBubbleContainer, { maxWidth: messageBubbleMaxWidthSmall }]}>
+                  <View style={[styles.firstMessageBubble, { padding: messagePadding, minHeight: messageBubbleMinHeight }]}>
+                    <View style={styles.firstMessageContent}>
+                      {/* Empty content or placeholder */}
+                    </View>
                   </View>
                 </View>
               </View>
+              <Text style={[styles.firstMessageTimestamp, { fontSize: timestampFontSize }]}>1:30 am</Text>
             </View>
-            <Text style={styles.firstMessageTimestamp}>1:30 am</Text>
-          </View>
 
-          {/* Message 2 - Right side (white bubble) */}
-          <View style={styles.secondMessageContainer}>
-            <View style={styles.secondMessageRow}>
-              <View style={styles.secondMessageBubble}>
-                <Text style={styles.secondMessageText}>
-                  Yes, it&apos;s available. Would you like to schedule a viewing?
-                </Text>
+            {/* Message 2 - Right side (incoming, white bubble) */}
+            <View style={[styles.messageContainerRight, { maxWidth: chatMaxWidth }]}>
+              <View style={styles.messageRowRight}>
+                <View style={[styles.messageBubbleRight, { maxWidth: messageBubbleMaxWidthSmall, paddingVertical: messagePaddingVertical, paddingHorizontal: messagePaddingHorizontal, minHeight: messageBubbleMinHeight }]}>
+                  <Text style={[styles.messageTextRight, { fontSize: messageFontSize, lineHeight: messageLineHeight }]}>
+                    Yes, it&apos;s available. Would you like to schedule a viewing?
+                  </Text>
+                </View>
+                <View style={[styles.messageAvatarRight, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}>
+                  <Image
+                    source={require('@/assets/images/message-avatar.png')}
+                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}
+                    resizeMode="cover"
+                  />
+                </View>
               </View>
-              <View style={styles.secondMessageAvatar}>
-                <Image
-                  source={require('@/assets/images/message-avatar.png')}
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
-              </View>
+              <Text style={[styles.messageTimestampRight, { fontSize: timestampFontSize }]}>1:30 am</Text>
             </View>
-            <Text style={styles.secondMessageTimestamp}>1:30 am</Text>
-          </View>
 
-          {/* Message 3 - Left side (green bubble) */}
-          <View style={styles.thirdMessageContainer}>
-            <View style={styles.thirdMessageRow}>
-              <View style={styles.thirdMessageAvatar}>
-                <Image
-                  source={require('@/assets/images/message-avatar.png')}
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
-              </View>
-              <View style={styles.thirdMessageBubbleContainer}>
-                <View style={styles.thirdMessageBubble}>
-                  <Text style={styles.thirdMessageText}>
+            {/* Message 3 - Left side (outgoing, green bubble) */}
+            <View style={[styles.messageContainerLeft, { maxWidth: chatMaxWidth }]}>
+              <View style={styles.messageRowLeft}>
+                <View style={[styles.messageAvatarLeft, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}>
+                  <Image
+                    source={require('@/assets/images/message-avatar.png')}
+                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}
+                    resizeMode="cover"
+                  />
+                </View>
+                <View style={[styles.messageBubbleLeft, { maxWidth: messageBubbleMaxWidthSmall, paddingVertical: messagePaddingVertical, paddingHorizontal: messagePaddingHorizontal, minHeight: messageBubbleMinHeight }]}>
+                  <Text style={[styles.messageTextLeft, { fontSize: messageFontSize, lineHeight: messageLineHeight }]}>
                     Can you send more pictures of it?
                   </Text>
                 </View>
               </View>
+              <Text style={[styles.messageTimestampLeft, { fontSize: timestampFontSize }]}>1:30 am</Text>
             </View>
-            <Text style={styles.thirdMessageTimestamp}>1:30 am</Text>
+
+            {/* Message 4 - Right side (incoming, white bubble) */}
+            <View style={[styles.messageContainerRight, { maxWidth: chatMaxWidth }]}>
+              <View style={styles.messageRowRight}>
+                <View style={[styles.messageBubbleRight, { maxWidth: messageBubbleMaxWidthSmall, paddingVertical: messagePaddingVertical, paddingHorizontal: messagePaddingHorizontal, minHeight: messageBubbleMinHeight }]}>
+                  <Text style={[styles.messageTextRight, { fontSize: messageFontSize, lineHeight: messageLineHeight }]}>
+                    Sure, I&apos;ll send more pictures today.
+                  </Text>
+                </View>
+                <View style={[styles.messageAvatarRight, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}>
+                  <Image
+                    source={require('@/assets/images/message-avatar.png')}
+                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize, borderRadius: avatarBorderRadius }]}
+                    resizeMode="cover"
+                  />
+                </View>
+              </View>
+              <Text style={[styles.messageTimestampRight, { fontSize: timestampFontSize }]}>1:30 am</Text>
+            </View>
           </View>
 
-          {/* Message 4 - Right side (white bubble) */}
-          <View style={styles.fourthMessageContainer}>
-            <View style={styles.fourthMessageRow}>
-              <View style={styles.fourthMessageBubble}>
-                <Text style={styles.fourthMessageText}>
-                  Sure, I&apos;ll send more pictures today.
-                </Text>
+          {/* Verification Badges */}
+          <View style={[styles.verificationContainer, { paddingHorizontal: horizontalPadding, gap: verificationGap, marginBottom: verificationMarginBottom, marginTop: verificationMarginTop }]}>
+            <View style={[styles.verificationRow, { gap: verificationRowGap }]}>
+              <View style={[styles.verificationItem, { gap: verificationItemGap, marginHorizontal: verificationItemMargin }]}>
+                <View style={[styles.checkIcon, { width: checkIconSize, height: checkIconSize, borderRadius: checkIconBorderRadius }]}>
+                  <Text style={[styles.checkmark, { fontSize: checkmarkFontSize }]}>✓</Text>
+                </View>
+                <Text style={[styles.verificationText, { fontSize: verificationTextSize }]}>Verified Trade sellers</Text>
               </View>
-              <View style={styles.fourthMessageAvatar}>
-                <Image
-                  source={require('@/assets/images/message-avatar.png')}
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
+              <View style={[styles.verificationItem, { gap: verificationItemGap, marginHorizontal: verificationItemMargin }]}>
+                <View style={[styles.checkIcon, { width: checkIconSize, height: checkIconSize, borderRadius: checkIconBorderRadius }]}>
+                  <Text style={[styles.checkmark, { fontSize: checkmarkFontSize }]}>✓</Text>
+                </View>
+                <Text style={[styles.verificationText, { fontSize: verificationTextSize }]}>Verified Private sellers</Text>
               </View>
             </View>
-            <Text style={styles.fourthMessageTimestamp}>1:30 am</Text>
+            <View style={[styles.verificationItemCenter, { gap: verificationItemGap, marginTop: 4 }]}>
+              <View style={[styles.checkIcon, { width: checkIconSize, height: checkIconSize, borderRadius: checkIconBorderRadius }]}>
+                <Text style={[styles.checkmark, { fontSize: checkmarkFontSize }]}>✓</Text>
+              </View>
+              <Text style={[styles.verificationText, { fontSize: verificationTextSize }]}>In-app chat (no external links)</Text>
+            </View>
           </View>
         </View>
 
-        {/* Verification Badges */}
-        <View style={styles.verificationContainer}>
-          <View style={styles.verificationRow}>
-            <View style={styles.verificationItem}>
-              <View style={styles.checkIcon}>
-                <Text style={styles.checkmark}>✓</Text>
-              </View>
-              <Text style={styles.verificationText}>Verified Trade sellers</Text>
-            </View>
-            <View style={styles.verificationItem}>
-              <View style={styles.checkIcon}>
-                <Text style={styles.checkmark}>✓</Text>
-              </View>
-              <Text style={styles.verificationText}>Verified Private sellers</Text>
-            </View>
-          </View>
-          <View style={styles.verificationItemCenter}>
-            <View style={styles.checkIcon}>
-              <Text style={styles.checkmark}>✓</Text>
-            </View>
-            <Text style={styles.verificationText}>In-app chat (no external links)</Text>
-          </View>
+        {/* Bottom Section - Anchored to bottom */}
+        <View style={[styles.onboardingContentWrapper, { paddingBottom: bottomPadding }]}>
+          <OnboardingContent
+            activeDotIndex={1}
+            title="Chat Directly With Real Sellers"
+            description="Message private owners and verified trade sellers instantly inside the app.">
+            <TouchableOpacity
+              style={[styles.guestButton, { backgroundColor: '#E5E7EB', minHeight: buttonHeight, paddingVertical: buttonPaddingVertical }]}
+              onPress={handleBrowseAsGuest}
+              activeOpacity={0.8}>
+              <Text style={[styles.guestButtonText, { fontSize: buttonFontSize }]}>Browse as Guest</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.nextButton, { minHeight: buttonHeight, paddingVertical: buttonPaddingVertical }]}
+              onPress={handleNext}>
+              <Text style={[styles.nextButtonText, { fontSize: buttonFontSize }]}>Next</Text>
+            </TouchableOpacity>
+          </OnboardingContent>
         </View>
-
       </View>
-
-      {/* Bottom Section */}
-      <View style={styles.onboardingContentWrapper}>
-      <OnboardingContent
-        activeDotIndex={1}
-        title="Chat Directly With Real Sellers"
-        description="Message private owners and verified trade sellers instantly inside the app.">
-        <TouchableOpacity
-          style={[styles.guestButton, { backgroundColor: '#E5E7EB' }]}
-          onPress={handleBrowseAsGuest}
-          activeOpacity={0.8}>
-          <Text style={styles.guestButtonText}>Browse as Guest</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={handleNext}>
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-      </OnboardingContent>
-      </View>
-    </View>
     </OnboardingBackground>
   );
 }
@@ -195,15 +235,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-    paddingTop: 50, // Space for status bar
+    justifyContent: 'space-between', // Push content to top and bottom
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
     paddingBottom: 10,
+    flexShrink: 0, // Don't shrink the top bar
   },
   backButton: {
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
@@ -215,430 +254,224 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   skipText: {
-    fontSize: 16,
     fontWeight: '400',
     color: '#000000',
+    flexShrink: 1,
   },
   contentArea: {
-    flex: 1,
-    backgroundColor: 'transparent', // Shows gradient background
-    paddingHorizontal: 20,
+    flex: 1, // Take available space between top bar and bottom content
+    backgroundColor: 'transparent',
     paddingTop: 20,
-    paddingBottom: 0, // Reduce bottom padding to move content up
+    paddingBottom: 0,
+    overflow: 'visible', // Allow verification items to be visible
   },
   onboardingContentWrapper: {
-    marginTop: -30, // Move onboarding content up
+    flexShrink: 0, // Don't shrink, keep at bottom
   },
   chatContainer: {
-    gap: 12,
-    marginBottom: 24,
     position: 'relative',
     alignItems: 'stretch',
-  },
-  firstMessageContainer: {
-    width: 304,
-    height: 72,
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: 4,
-    opacity: 1, // Container opacity
-  },
-  firstMessageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 4,
-    width: 304,
-    height: 48,
-  },
-  firstMessageAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    opacity: 0.2,
-    flexShrink: 0,
   },
   avatarImage: {
     width: 20,
     height: 20,
     borderRadius: 10,
   },
+  // First message (placeholder/empty, left side)
+  firstMessageContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    alignSelf: 'flex-start',
+  },
+  firstMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  firstMessageAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+    opacity: 0.3, // Faded appearance for placeholder
+    flexShrink: 0,
+  },
   firstMessageBubbleContainer: {
-    width: 280,
-    height: 48,
-    opacity: 0.2,
     flex: 1,
+    minWidth: 0,
+    opacity: 0.3, // Faded appearance for placeholder
   },
   firstMessageBubble: {
     flexDirection: 'column',
     alignItems: 'center',
-    padding: 12,
+    justifyContent: 'center',
     gap: 4,
-    width: 280,
-    height: 48,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.9,
-    borderRadius: 12, // 8px 12px 12px 12px
-    borderTopLeftRadius: 8, // Top-left corner is 8px
+    backgroundColor: '#F3F4F6', // Light grey for placeholder
+    borderRadius: 12,
+    borderTopLeftRadius: 8,
   },
   firstMessageContent: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
-    width: 256,
-    height: 24,
+    width: '100%',
+    minHeight: 24,
   },
   firstMessageTimestamp: {
-    width: 304,
-    height: 20,
     fontFamily: 'Source Sans Pro',
     fontWeight: '600',
-    fontSize: 12,
     lineHeight: 20,
-    textAlign: 'right',
-    color: '#6B7280', // gray/500
-    opacity: 0.2,
+    textAlign: 'left',
+    color: '#6B7280',
+    opacity: 0.5, // Faded timestamp
+    marginTop: 2, // Reduced from 4
+    paddingLeft: 24, // Align with bubble edge
   },
-  secondMessageContainer: {
-    width: 276,
-    height: 88,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    gap: 4,
-    alignSelf: 'flex-end', // Align container to the right
-  },
-  secondMessageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 4,
-    width: 276,
-    height: 64,
-  },
-  secondMessageBubble: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    gap: 10,
-    width: 252,
-    height: 64,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12, // 12px 4px 12px 12px
-    borderTopRightRadius: 4, // Top-right corner is 4px
-  },
-  secondMessageText: {
-    width: 220,
-    height: 48,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#111827', // gray/900
-  },
-  secondMessageAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  secondMessageTimestamp: {
-    width: 276,
-    height: 20,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 20,
-    textAlign: 'left', // Align with left border of message bubble
-    paddingLeft: 0, // Align with bubble's left edge
-    color: '#6B7280', // gray/500
-  },
-  thirdMessageContainer: {
-    width: 304,
-    height: 72,
+  // Right side messages (incoming)
+  messageContainerRight: {
     flexDirection: 'column',
     alignItems: 'flex-end',
     gap: 4,
-  },
-  thirdMessageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 4,
-    width: 304,
-    height: 48,
-  },
-  thirdMessageAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  thirdMessageBubbleContainer: {
-    width: 280,
-    minHeight: 48,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 4,
-    flex: 1,
-  },
-  thirdMessageBubble: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    padding: 12,
-    gap: 4,
-    width: 280,
-    minHeight: 48,
-    backgroundColor: '#07B007', // Green background
-    borderRadius: 12, // 8px 12px 12px 12px
-    borderTopLeftRadius: 8, // Top-left corner is 8px
-  },
-  thirdMessageText: {
-    maxWidth: 256,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#FFFFFF', // White text
-  },
-  thirdMessageTimestamp: {
-    width: 304,
-    height: 20,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 20,
-    textAlign: 'right',
-    color: '#6B7280', // gray/500
-  },
-  fourthMessageContainer: {
-    width: 276,
-    height: 88,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    gap: 4,
-    alignSelf: 'flex-end', // Align container to the right
-  },
-  fourthMessageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 4,
-    width: 276,
-    height: 64,
-  },
-  fourthMessageBubble: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    gap: 10,
-    width: 252,
-    height: 64,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12, // 12px 4px 12px 12px
-    borderTopRightRadius: 4, // Top-right corner is 4px
-  },
-  fourthMessageText: {
-    width: 220,
-    height: 48,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#111827', // gray/900
-  },
-  fourthMessageAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  fourthMessageTimestamp: {
-    width: 276,
-    height: 20,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 20,
-    textAlign: 'left', // Align with left border of message bubble
-    paddingLeft: 0, // Align with bubble's left edge
-    color: '#6B7280', // gray/500
+    alignSelf: 'flex-end',
   },
   messageRowRight: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'flex-start',
-    gap: 8,
-  },
-  messageRowLeft: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    gap: 8,
+    gap: 4,
   },
   messageBubbleRight: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    maxWidth: SCREEN_WIDTH * 0.65,
-    borderBottomRightRadius: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    // Tail pointing right
-    position: 'relative',
-  },
-  messageBubbleLeft: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    maxWidth: SCREEN_WIDTH * 0.65,
-    borderBottomLeftRadius: 4,
-    // Tail pointing left
-    position: 'relative',
-  },
-  messageBubbleFaded: {
-    backgroundColor: '#F3F4F6', // Light grey for faded message
-    opacity: 0.4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    borderTopRightRadius: 4,
   },
   messageTextRight: {
-    fontSize: 15,
+    fontFamily: 'Source Sans Pro',
     fontWeight: '400',
-    color: '#000000',
+    color: '#111827',
+    flexShrink: 1,
+  },
+  messageAvatarRight: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  messageTimestampRight: {
+    fontFamily: 'Source Sans Pro',
+    fontWeight: '600',
     lineHeight: 20,
+    textAlign: 'right',
+    color: '#6B7280',
+    marginTop: 2, // Reduced from 4
+    paddingRight: 24, // Align with bubble edge
+  },
+  // Left side messages (outgoing)
+  messageContainerLeft: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    alignSelf: 'flex-start',
+  },
+  messageRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  messageBubbleLeft: {
+    backgroundColor: '#07B007',
+    borderRadius: 12,
+    borderTopLeftRadius: 8,
   },
   messageTextLeft: {
-    fontSize: 15,
+    fontFamily: 'Source Sans Pro',
     fontWeight: '400',
     color: '#FFFFFF',
-    lineHeight: 20,
+    flexShrink: 1,
   },
-  messageTextFaded: {
-    color: '#9CA3AF',
-    opacity: 0.5,
-  },
-  avatarFaded: {
-    opacity: 0.4,
-  },
-  avatarContainer: {
-    width: 36,
-    height: 36,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E5E7EB',
+  messageAvatarLeft: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
+    flexShrink: 0,
   },
-  avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#9CA3AF',
-  },
-  timestampRight: {
-    fontSize: 12,
-    color: '#9E9E9E',
-    textAlign: 'right',
-    marginTop: 4,
-    marginRight: 40,
-    marginBottom: 8,
-  },
-  timestampLeft: {
-    fontSize: 12,
-    color: '#9E9E9E',
+  messageTimestampLeft: {
+    fontFamily: 'Source Sans Pro',
+    fontWeight: '600',
+    lineHeight: 20,
     textAlign: 'left',
-    marginTop: 4,
-    marginLeft: 40,
-    marginBottom: 8,
+    color: '#6B7280',
+    marginTop: 2, // Reduced from 4
+    paddingLeft: 24, // Align with bubble edge
   },
   verificationContainer: {
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 24,
+    width: '100%',
+    paddingVertical: 8, // Add vertical padding to ensure visibility
   },
   verificationRow: {
     flexDirection: 'row',
-    gap: 16,
     justifyContent: 'center',
     flexWrap: 'wrap',
+    width: '100%',
+    paddingHorizontal: 8, // Add horizontal padding
   },
   verificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    flexShrink: 0,
   },
   verificationItemCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     justifyContent: 'center',
+    width: '100%',
+    marginTop: 4, // Add top margin
   },
   checkIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#4B5563', // Dark grey circular icon
+    backgroundColor: '#4B5563',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkmark: {
     color: '#FFFFFF',
-    fontSize: 12,
     fontWeight: 'bold',
   },
   verificationText: {
-    fontSize: 14,
     fontWeight: '400',
-    color: '#374151', // Dark grey text
+    color: '#374151',
     fontFamily: 'Source Sans Pro',
   },
   guestButton: {
     flex: 1,
-    backgroundColor: '#E5E7EB', // grey/200
+    backgroundColor: '#E5E7EB',
     borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0,
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   guestButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
     fontFamily: 'system-ui',
+    flexShrink: 1,
   },
   nextButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
     borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   nextButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    flexShrink: 1,
   },
 });

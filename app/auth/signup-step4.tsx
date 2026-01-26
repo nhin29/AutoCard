@@ -1,14 +1,15 @@
+import { SignupHeader } from '@/components/auth/SignupHeader';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { authService } from '@/services/auth';
 import { storageService } from '@/services/storage';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,6 +19,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Sign Up Screen - Step 4: Create Account
@@ -30,6 +32,8 @@ import {
 export default function SignUpStep4Screen() {
   const router = useRouter();
   const { signupData, setSignupCredentials, setUser, setSession, clearSignupData } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
   
   // Initialize form state from auth store (supports back navigation)
   // Email is now collected in step 3, so use it from signupData
@@ -42,6 +46,18 @@ export default function SignUpStep4Screen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Calculate responsive values - reduced for small phones with safe area insets
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.lg;
+  const horizontalPaddingWithInsets = Math.max(horizontalPadding, insets.left, insets.right);
+  const bottomPadding = Math.max(insets.bottom, isSmall ? SPACING.base : SPACING.xl);
+  const titleFontSize = isSmall ? FONT_SIZES.lg : FONT_SIZES['2xl'];
+  const buttonHeight = isSmall ? 42 : 48;
+  const inputHeight = isSmall ? 40 : 48;
+  const eyeIconSize = isSmall ? 16 : 20;
+  const inputLabelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.base;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const inputMarginBottom = isSmall ? SPACING.sm : SPACING.md;
   
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -149,7 +165,6 @@ export default function SignUpStep4Screen() {
           );
 
           if (uploadResult.error) {
-            console.error('[SignUp] Logo upload error:', uploadResult.error);
             // Don't block signup if logo upload fails - user can upload later
           } else if (uploadResult.url) {
             // Update profile with logo URL
@@ -160,13 +175,11 @@ export default function SignUpStep4Screen() {
               .eq('id', result.user.id);
             
             if (updateError) {
-              console.error('[SignUp] Profile update error:', updateError.message);
             }
           }
         } catch (uploadError: any) {
           // Logo upload failed, but account was created
           // We can let the user upload later
-          console.error('[SignUp] Logo upload exception:', uploadError?.message || uploadError);
         }
       }
 
@@ -179,7 +192,6 @@ export default function SignUpStep4Screen() {
           );
 
           if (uploadResult.error) {
-            console.error('[SignUp] Banner upload error:', uploadResult.error);
             // Don't block signup if banner upload fails - user can upload later
           } else if (uploadResult.url) {
             // Update profile with banner URL
@@ -190,12 +202,10 @@ export default function SignUpStep4Screen() {
               .eq('id', result.user.id);
             
             if (updateError) {
-              console.error('[SignUp] Profile banner update error:', updateError.message);
             }
           }
         } catch (uploadError: any) {
           // Banner upload failed, but account was created
-          console.error('[SignUp] Banner upload exception:', uploadError?.message || uploadError);
         }
       }
 
@@ -225,7 +235,6 @@ export default function SignUpStep4Screen() {
         }
       });
     } catch (error: any) {
-      console.error('[SignUp] Create account error:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -241,23 +250,12 @@ export default function SignUpStep4Screen() {
       <StatusBar style="dark" />
 
       {/* Header: Back Button + Logo */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          disabled={isLoading}
-          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/auth-logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
-        <View style={styles.headerSpacer} />
-      </View>
+      <SignupHeader
+        showBackButton
+        showLogo
+        onBack={handleBack}
+        disableBack={isLoading}
+      />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -265,20 +263,27 @@ export default function SignUpStep4Screen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingHorizontal: horizontalPaddingWithInsets,
+              paddingTop: SPACING.sm,
+              paddingBottom: bottomPadding,
+            }
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
 
           {/* Title */}
-          <Text style={styles.title}>Create Account</Text>
+          <Text style={[styles.title, { fontSize: titleFontSize, marginBottom: isSmall ? SPACING.lg : SPACING.xl }]}>Create Account</Text>
 
           {/* Form Fields */}
-          <View style={styles.formContainer}>
+          <View style={[styles.formContainer, { marginBottom: isSmall ? SPACING.lg : 24 }]}>
             {/* Instagram Link */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Instagram Link <Text style={styles.optionalText}>(Optional)</Text></Text>
+            <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+              <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Instagram Link <Text style={styles.optionalText}>(Optional)</Text></Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 placeholder="Paste your Link here"
                 placeholderTextColor="#9CA3AF"
                 value={instagramLink}
@@ -291,10 +296,10 @@ export default function SignUpStep4Screen() {
             </View>
 
             {/* Facebook Link */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Facebook Link <Text style={styles.optionalText}>(Optional)</Text></Text>
+            <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+              <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Facebook Link <Text style={styles.optionalText}>(Optional)</Text></Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 placeholder="Paste your Link here"
                 placeholderTextColor="#9CA3AF"
                 value={facebookLink}
@@ -307,10 +312,10 @@ export default function SignUpStep4Screen() {
             </View>
 
             {/* Website Link */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Website Link <Text style={styles.optionalText}>(Optional)</Text></Text>
+            <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+              <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Website Link <Text style={styles.optionalText}>(Optional)</Text></Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 placeholder="Paste your Link here"
                 placeholderTextColor="#9CA3AF"
                 value={websiteLink}
@@ -323,11 +328,15 @@ export default function SignUpStep4Screen() {
             </View>
 
             {/* Create Password */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Create Password</Text>
-              <View style={[styles.passwordContainer, errors.password && styles.passwordContainerError]}>
+            <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+              <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Create Password</Text>
+              <View style={[
+                styles.passwordContainer,
+                { height: inputHeight },
+                errors.password && styles.passwordContainerError
+              ]}>
                 <TextInput
-                  style={styles.passwordInput}
+                  style={[styles.passwordInput, { fontSize: inputFontSize }]}
                   placeholder="Create Password"
                   placeholderTextColor="#9CA3AF"
                   value={password}
@@ -354,22 +363,26 @@ export default function SignUpStep4Screen() {
                   {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
                   <IconSymbol
                     name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
-                    size={20}
+                    size={eyeIconSize}
                     color="#9CA3AF"
                   />
                 </TouchableOpacity>
               </View>
               {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
+                <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.password}</Text>
               )}
             </View>
 
             {/* Confirm Password */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Confirm Password</Text>
-              <View style={[styles.passwordContainer, errors.confirmPassword && styles.passwordContainerError]}>
+            <View style={[styles.inputContainer, { marginBottom: inputMarginBottom }]}>
+              <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Confirm Password</Text>
+              <View style={[
+                styles.passwordContainer,
+                { height: inputHeight },
+                errors.confirmPassword && styles.passwordContainerError
+              ]}>
                 <TextInput
-                  style={styles.passwordInput}
+                  style={[styles.passwordInput, { fontSize: inputFontSize }]}
                   placeholder="Confirm Password"
                   placeholderTextColor="#9CA3AF"
                   value={confirmPassword}
@@ -392,38 +405,42 @@ export default function SignUpStep4Screen() {
                   {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
                   <IconSymbol
                     name={showConfirmPassword ? 'eye.slash.fill' : 'eye.fill'}
-                    size={20}
+                    size={eyeIconSize}
                     color="#9CA3AF"
                   />
                 </TouchableOpacity>
               </View>
               {errors.confirmPassword && (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+                <Text style={[styles.errorText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>{errors.confirmPassword}</Text>
               )}
             </View>
           </View>
 
           {/* Create Account Button */}
           <TouchableOpacity
-            style={[styles.createButton, isLoading && styles.createButtonDisabled]}
+            style={[
+              styles.createButton,
+              { height: buttonHeight },
+              isLoading && styles.createButtonDisabled
+            ]}
             onPress={handleCreateAccount}
             disabled={isLoading}
             {...(Platform.OS === 'web' && { cursor: isLoading ? 'not-allowed' : 'pointer' })}>
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.createButtonText}>Create Account</Text>
+              <Text style={[styles.createButtonText, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Create Account</Text>
             )}
           </TouchableOpacity>
 
           {/* Login Link */}
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginPrompt}>Already have an account?</Text>
+          <View style={[styles.loginContainer, { marginTop: isSmall ? SPACING.sm : SPACING.lg }]}>
+            <Text style={[styles.loginPrompt, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Already have an account?</Text>
             <TouchableOpacity
               onPress={handleLogin}
               disabled={isLoading}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <Text style={styles.loginLink}>Login</Text>
+              <Text style={[styles.loginLink, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.base }]}>Login</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -437,33 +454,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -8,
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoImage: {
-    width: 200,
-    height: 60,
-  },
-  headerSpacer: {
-    width: 40,
-  },
   keyboardView: {
     flex: 1,
   },
@@ -471,32 +461,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 40,
+    // Padding is set dynamically
   },
   title: {
-    fontSize: 28,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
     textAlign: 'center',
-    marginBottom: 32,
   },
   formContainer: {
     width: '100%',
-    marginBottom: 24,
   },
   inputContainer: {
     width: '100%',
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 14,
     fontWeight: '500',
     color: '#374151',
     fontFamily: 'system-ui',
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
   },
   optionalText: {
     fontWeight: '400',
@@ -504,13 +488,11 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    height: 48,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    paddingHorizontal: SPACING.base,
     color: '#000000',
     fontFamily: 'system-ui',
   },
@@ -521,29 +503,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    height: 48,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.base,
   },
   passwordContainerError: {
     borderColor: '#EF4444',
   },
   passwordInput: {
     flex: 1,
-    fontSize: 16,
     color: '#000000',
     fontFamily: 'system-ui',
-    paddingRight: 8,
+    paddingRight: SPACING.sm,
   },
   errorText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#EF4444',
     fontFamily: 'system-ui',
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   eyeButton: {
     width: 32,
@@ -553,19 +532,18 @@ const styles = StyleSheet.create({
   },
   createButton: {
     width: '100%',
-    height: 52,
     backgroundColor: '#4CAF50',
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xl,
   },
   createButtonDisabled: {
     backgroundColor: '#9CA3AF',
   },
   createButtonText: {
-    fontSize: 16,
+    fontSize: FONT_SIZES.md,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
@@ -574,16 +552,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING.xs,
   },
   loginPrompt: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
   },
   loginLink: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'system-ui',

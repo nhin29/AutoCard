@@ -1,6 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
+// Extend global type to include our warning flag
+declare global {
+  // eslint-disable-next-line no-var
+  var __asyncStorageWarningShown: boolean | undefined;
+}
+
 /**
  * AsyncStorage Wrapper with Error Handling
  * 
@@ -30,12 +36,7 @@ async function attemptStorageFix(): Promise<void> {
       // The error occurs in ExponentExperienceData/@anonymous
       // We can't directly fix it, but we can work around it
       // by catching errors and using in-memory fallback for critical operations
-      if (__DEV__) {
-        console.warn(
-          '[AsyncStorage] Known simulator issue detected. ' +
-          'If storage errors persist, try: Reset iOS Simulator (Device > Erase All Content and Settings)'
-        );
-      }
+      // Known simulator issue detected - handled silently
     }
   } catch (error) {
     // Silently fail - this is just a workaround attempt
@@ -59,23 +60,15 @@ export const safeAsyncStorage = {
       // Handle known directory creation error (simulator issue)
       if (errorMessage.includes('Failed to create storage directory') || 
           errorMessage.includes('Not a directory')) {
-        // Suppress warning for known simulator issue - only log once per session
-        if (__DEV__ && !global.__asyncStorageWarningShown) {
-          console.warn(
-            '[AsyncStorage] Known simulator storage issue detected. ' +
-            'This is expected in iOS Simulator and does not affect functionality. ' +
-            'To fix: Reset iOS Simulator (Device > Erase All Content and Settings).'
-          );
-          global.__asyncStorageWarningShown = true;
+        // Suppress warning for known simulator issue
+        if (__DEV__ && !globalThis.__asyncStorageWarningShown) {
+          globalThis.__asyncStorageWarningShown = true;
         }
         // Return null instead of crashing - app can continue without cached data
         return null;
       }
       
-      // For other errors, log and return null
-      if (__DEV__) {
-        console.error(`[AsyncStorage] Error getting item "${key}":`, errorMessage);
-      }
+      // For other errors, return null
       return null;
     }
   },
@@ -98,10 +91,7 @@ export const safeAsyncStorage = {
         return;
       }
       
-      // For other errors, log but don't crash
-      if (__DEV__) {
-        console.error(`[AsyncStorage] Error setting item "${key}":`, errorMessage);
-      }
+      // For other errors, silently fail
     }
   },
 
@@ -114,9 +104,6 @@ export const safeAsyncStorage = {
       await AsyncStorage.removeItem(key);
     } catch (error: any) {
       // Silently handle errors - removal failures are non-critical
-      if (__DEV__) {
-        console.warn(`[AsyncStorage] Error removing item "${key}":`, error?.message);
-      }
     }
   },
 
@@ -128,9 +115,7 @@ export const safeAsyncStorage = {
       await attemptStorageFix();
       await AsyncStorage.clear();
     } catch (error: any) {
-      if (__DEV__) {
-        console.warn('[AsyncStorage] Error clearing storage:', error?.message);
-      }
+      // Silently handle errors
     }
   },
 
@@ -140,11 +125,9 @@ export const safeAsyncStorage = {
   async getAllKeys(): Promise<string[]> {
     try {
       await attemptStorageFix();
-      return await AsyncStorage.getAllKeys();
+      const keys = await AsyncStorage.getAllKeys();
+      return [...keys]; // Convert readonly array to mutable array
     } catch (error: any) {
-      if (__DEV__) {
-        console.warn('[AsyncStorage] Error getting all keys:', error?.message);
-      }
       return [];
     }
   },
@@ -155,11 +138,9 @@ export const safeAsyncStorage = {
   async multiGet(keys: string[]): Promise<[string, string | null][]> {
     try {
       await attemptStorageFix();
-      return await AsyncStorage.multiGet(keys);
+      const result = await AsyncStorage.multiGet(keys);
+      return result.map(([key, value]) => [key, value] as [string, string | null]); // Convert readonly array to mutable array
     } catch (error: any) {
-      if (__DEV__) {
-        console.warn('[AsyncStorage] Error in multiGet:', error?.message);
-      }
       // Return array of [key, null] pairs
       return keys.map(key => [key, null]);
     }
@@ -173,9 +154,7 @@ export const safeAsyncStorage = {
       await attemptStorageFix();
       await AsyncStorage.multiSet(keyValuePairs);
     } catch (error: any) {
-      if (__DEV__) {
-        console.warn('[AsyncStorage] Error in multiSet:', error?.message);
-      }
+      // Silently handle errors
     }
   },
 
@@ -187,9 +166,7 @@ export const safeAsyncStorage = {
       await attemptStorageFix();
       await AsyncStorage.multiRemove(keys);
     } catch (error: any) {
-      if (__DEV__) {
-        console.warn('[AsyncStorage] Error in multiRemove:', error?.message);
-      }
+      // Silently handle errors
     }
   },
 };

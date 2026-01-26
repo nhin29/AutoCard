@@ -10,10 +10,12 @@ import type { Ad } from '@/stores/useAdStore';
 import { useAdStore } from '@/stores/useAdStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { Ad as DatabaseAd, Profile } from '@/types/database';
+import { useResponsive, SPACING, FONT_SIZES, useScaledSize } from '@/utils/responsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 /**
  * Home Screen
@@ -67,6 +69,9 @@ function convertDatabaseAdToStore(ad: DatabaseAd): Ad {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
+  const { height: screenHeight } = useWindowDimensions();
   const { user } = useAuthStore();
   const storeAds = useAdStore((state) => state.ads);
   const syncAdFromDatabase = useAdStore((state) => state.syncAdFromDatabase);
@@ -84,6 +89,34 @@ export default function HomeScreen() {
   // Check if user is a guest (no session/user = guest)
   const isGuest = !user;
 
+  // Calculate header height (logo + padding) using scaled values
+  const headerPadding = useScaledSize(SPACING.base, SPACING.sm, SPACING.lg);
+  const logoHeightValue = useScaledSize(40, 36, 44);
+  const headerHeight = Math.max(insets.top, headerPadding) + logoHeightValue + SPACING.base;
+  // Calculate tab bar height using scaled values
+  const tabBarHeight = useScaledSize(52, 48, 60) + insets.bottom;
+  // Calculate available height for ad card (full screen minus header and tab bar)
+  const adCardHeight = screenHeight - headerHeight - tabBarHeight;
+
+  // Calculate responsive values using scale factor for proportional sizing
+  const horizontalPadding = useScaledSize(SPACING.base, SPACING.sm, SPACING.lg);
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerExtraPadding = useScaledSize(SPACING.base, SPACING.md, SPACING.lg);
+  const headerPaddingTop = insets.top + headerExtraPadding;
+  const logoWidth = useScaledSize(110, Math.min(screenWidth * 0.3, 100), 130);
+  const logoHeight = (logoWidth * 36) / 120; // Maintain aspect ratio
+  const filterIconSize = useScaledSize(22, 20, 26);
+  const filterButtonSize = useScaledSize(38, 36, 44);
+  const placeAdButtonPaddingH = useScaledSize(SPACING.base, SPACING.sm, SPACING.lg);
+  const placeAdButtonPaddingV = useScaledSize(SPACING.sm, SPACING.xs, SPACING.base);
+  const placeAdButtonFontSize = useScaledSize(FONT_SIZES.sm, FONT_SIZES.xs, FONT_SIZES.md);
+  const emptyStateTitleFontSize = useScaledSize(19, FONT_SIZES.lg, 22);
+  const emptyStateSubtitleFontSize = useScaledSize(FONT_SIZES.md, FONT_SIZES.sm, FONT_SIZES.lg);
+  const emptyStateMarginBottom = useScaledSize(28, SPACING.lg, 36);
+  const postFirstAdButtonHeight = useScaledSize(48, 44, 56);
+  const postFirstAdButtonFontSize = useScaledSize(FONT_SIZES.md, FONT_SIZES.sm, FONT_SIZES.lg);
+  const headerActionsGap = useScaledSize(12, SPACING.sm, 16);
+
   // Load ads from database on mount
   useEffect(() => {
     const loadAds = async () => {
@@ -92,7 +125,6 @@ export default function HomeScreen() {
         const result = await adService.getActiveAds();
         
         if (result.error) {
-          console.error('[HomeScreen] Error loading ads:', result.error);
           setDatabaseAds([]);
         } else {
           // Convert database ads to store format
@@ -100,7 +132,6 @@ export default function HomeScreen() {
           setDatabaseAds(convertedAds);
         }
       } catch (error) {
-        console.error('[HomeScreen] Exception loading ads:', error);
         setDatabaseAds([]);
       } finally {
         setIsLoadingAds(false);
@@ -163,16 +194,10 @@ export default function HomeScreen() {
           }
         } catch (error) {
           // Silently handle errors in callback
-          if (__DEV__) {
-            console.warn('[HomeScreen] Error handling real-time update:', error);
-          }
         }
       });
     } catch (error) {
       // Silently handle subscription creation errors
-      if (__DEV__) {
-        console.warn('[HomeScreen] Failed to create ads subscription:', error);
-      }
     }
 
     // Cleanup subscription on unmount
@@ -182,9 +207,6 @@ export default function HomeScreen() {
           unsubscribe();
         } catch (error) {
           // Silently handle cleanup errors
-          if (__DEV__) {
-            console.warn('[HomeScreen] Error cleaning up ads subscription:', error);
-          }
         }
       }
     };
@@ -234,7 +256,6 @@ export default function HomeScreen() {
             setSelectedAdSellerProfile(result.profile);
           }
         } catch (error) {
-          console.error('[HomeScreen] Error fetching seller profile:', error);
         }
       }
       
@@ -299,29 +320,35 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingHorizontal: horizontalPadding }]}>
         {/* Logo and Tagline */}
         <View style={styles.logoContainer}>
           <Image
             source={require('@/assets/images/auth-logo.png')}
-            style={styles.logoImage}
+            style={[styles.logoImage, { width: logoWidth, height: logoHeight }]}
             resizeMode="contain"
           />
         </View>
 
         {/* Action Buttons */}
-        <View style={styles.headerActions}>
+        <View style={[styles.headerActions, { gap: headerActionsGap }]}>
           <TouchableOpacity
-            style={styles.placeAdButton}
+            style={[
+              styles.placeAdButton,
+              {
+                paddingHorizontal: placeAdButtonPaddingH,
+                paddingVertical: placeAdButtonPaddingV,
+              }
+            ]}
             onPress={handlePlaceAd}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.placeAdButtonText}>Place Ad +</Text>
+            <Text style={[styles.placeAdButtonText, { fontSize: placeAdButtonFontSize }]}>Place Ad +</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.filterButton}
+            style={[styles.filterButton, { width: filterButtonSize, height: filterButtonSize }]}
             onPress={handleFilter}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <IconSymbol name="slider.horizontal.3" size={24} color="#000000" />
+            <IconSymbol name="slider.horizontal.3" size={filterIconSize} color="#000000" />
           </TouchableOpacity>
         </View>
       </View>
@@ -335,26 +362,26 @@ export default function HomeScreen() {
         // Only show "Post your first ad" for logged-in users, not guests
         !isGuest ? (
           <View style={styles.content}>
-            <Text style={styles.emptyStateTitle}>
+            <Text style={[styles.emptyStateTitle, { fontSize: emptyStateTitleFontSize }]}>
               Post your first ad to kick off your selling journey.
             </Text>
-            <Text style={styles.emptyStateSubtitle}>
+            <Text style={[styles.emptyStateSubtitle, { fontSize: emptyStateSubtitleFontSize, marginBottom: emptyStateMarginBottom }]}>
               The sooner you start, the faster you sell.
             </Text>
 
             <TouchableOpacity
-              style={styles.postFirstAdButton}
+              style={[styles.postFirstAdButton, { minHeight: postFirstAdButtonHeight }]}
               onPress={handlePostFirstAd}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <Text style={styles.postFirstAdButtonText}>Post Your First Ad</Text>
+              <Text style={[styles.postFirstAdButtonText, { fontSize: postFirstAdButtonFontSize }]}>Post Your First Ad</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.content}>
-            <Text style={styles.emptyStateTitle}>
+            <Text style={[styles.emptyStateTitle, { fontSize: emptyStateTitleFontSize }]}>
               No ads available at the moment.
             </Text>
-            <Text style={styles.emptyStateSubtitle}>
+            <Text style={[styles.emptyStateSubtitle, { fontSize: emptyStateSubtitleFontSize, marginBottom: emptyStateMarginBottom }]}>
               Check back later for new listings.
             </Text>
           </View>
@@ -364,18 +391,29 @@ export default function HomeScreen() {
           ref={flatListRef}
           data={allAds}
           renderItem={({ item }) => (
-            <AdCard
-              ad={item}
-              onCall={() => handleCall(item.id)}
-              onMessage={() => handleMessage(item.id)}
-              onNotify={() => handleNotify(item.id)}
-              onThumbnailPress={(index) => handleThumbnailPress(item.id, index)}
-              onPress={() => handleAdPress(item.id)}
-            />
+            <View style={{ height: adCardHeight }}>
+              <AdCard
+                ad={item}
+                availableHeight={adCardHeight}
+                onCall={() => handleCall(item.id)}
+                onMessage={() => handleMessage(item.id)}
+                onNotify={() => handleNotify(item.id)}
+                onThumbnailPress={(index) => handleThumbnailPress(item.id, index)}
+                onPress={() => handleAdPress(item.id)}
+              />
+            </View>
           )}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          snapToInterval={adCardHeight}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          pagingEnabled={false}
+          getItemLayout={(_, index) => ({
+            length: adCardHeight,
+            offset: adCardHeight * index,
+            index,
+          })}
         />
       )}
 
@@ -423,17 +461,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: SPACING.base,
+    // paddingTop and paddingHorizontal set dynamically
   },
   logoContainer: {
     flex: 1,
   },
   logoImage: {
-    width: 120,
-    height: 36,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
+    maxWidth: '100%',
+    resizeMode: 'contain',
+    // width and height set dynamically
   },
   tagline: {
     fontSize: 10,
@@ -446,24 +484,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    // gap adjusted dynamically if needed
   },
   placeAdButton: {
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 8,
+    // paddingHorizontal and paddingVertical set dynamically
   },
   placeAdButtonText: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   filterButton: {
-    width: 40,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   content: {
     flex: 1,
@@ -472,38 +509,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyStateTitle: {
-    fontSize: 20,
     fontWeight: '600',
     color: '#000000',
     fontFamily: 'system-ui',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: SPACING.md,
+    flexShrink: 1,
+    paddingHorizontal: SPACING.base,
+    // fontSize set dynamically
   },
   emptyStateSubtitle: {
-    fontSize: 16,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
     textAlign: 'center',
-    marginBottom: 32,
+    flexShrink: 1,
+    paddingHorizontal: SPACING.base,
+    // fontSize and marginBottom set dynamically
   },
   postFirstAdButton: {
     width: '100%',
     maxWidth: 300,
-    height: 52,
     backgroundColor: '#4CAF50',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: SPACING.base,
+    paddingHorizontal: SPACING.base,
+    // minHeight set dynamically
   },
   postFirstAdButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   listContent: {
-    paddingBottom: 8,
+    // No padding needed - each item takes full height
   },
   loadingContainer: {
     flex: 1,

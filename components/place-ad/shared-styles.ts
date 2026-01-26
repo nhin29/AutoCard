@@ -1,10 +1,27 @@
-import { Dimensions, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HORIZONTAL_PADDING = 16;
 const GRID_GAP = 8;
 const GRID_COLUMNS = 4;
-export const IMAGE_SIZE = (SCREEN_WIDTH - (HORIZONTAL_PADDING * 2) - (GRID_GAP * (GRID_COLUMNS - 1))) / GRID_COLUMNS;
+
+/**
+ * Hook to calculate responsive image size for grid
+ * Use this instead of the static IMAGE_SIZE export
+ * 
+ * @example
+ * const imageSize = useImageGridSize();
+ */
+export function useImageGridSize(): number {
+  const { width } = useWindowDimensions();
+  return (width - (HORIZONTAL_PADDING * 2) - (GRID_GAP * (GRID_COLUMNS - 1))) / GRID_COLUMNS;
+}
+
+/**
+ * @deprecated Use useImageGridSize() hook instead for responsive sizing
+ * This is kept for backward compatibility but will use a default width
+ */
+export const IMAGE_SIZE = 80; // Fallback default, components should use useImageGridSize()
 
 export const sharedStyles = StyleSheet.create({
   section: {

@@ -1,8 +1,10 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     Alert,
     KeyboardAvoidingView,
@@ -25,10 +27,36 @@ type RequestType = 'correct' | 'download' | 'transfer' | 'question';
  */
 export default function DataRequestScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const { user } = useAuthStore();
   const [selectedTypes, setSelectedTypes] = useState<Set<RequestType>>(new Set());
   const [email, setEmail] = useState(user?.email || '');
   const [comment, setComment] = useState('');
+
+  // Calculate responsive values
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const headerPaddingBottom = isSmall ? SPACING.sm : SPACING.base;
+  const backButtonSize = isSmall ? 40 : 44;
+  const backIconSize = isSmall ? 20 : 24;
+  const headerTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const scrollPaddingTop = isSmall ? SPACING.md : 24;
+  const scrollPaddingBottom = isSmall ? SPACING.xl : 40;
+  const privacyTextFontSize = isSmall ? FONT_SIZES.sm : 15;
+  const sectionTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const sectionSubtitleFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const optionCardPadding = isSmall ? SPACING.sm : SPACING.base;
+  const checkboxSize = isSmall ? 18 : 20;
+  const checkboxIconSize = isSmall ? 12 : 14;
+  const optionTitleFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const optionDescriptionFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputLabelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const inputHeight = isSmall ? 44 : 48;
+  const sendButtonHeight = isSmall ? 48 : 52;
+  const sendButtonFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
 
   const handleBack = () => {
     router.back();
@@ -85,41 +113,42 @@ export default function DataRequestScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingBottom: headerPaddingBottom, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { width: backButtonSize, height: backButtonSize }]}
           onPress={handleBack}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Data Request Form</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={[styles.headerTitle, { fontSize: headerTitleFontSize }]}>Data Request Form</Text>
+        <View style={[styles.headerSpacer, { width: backButtonSize }]} />
       </View>
 
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding, paddingTop: scrollPaddingTop, paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         
         {/* Privacy Statement */}
         <View style={styles.privacyStatement}>
-          <Text style={styles.privacyText}>
+          <Text style={[styles.privacyText, { fontSize: privacyTextFontSize }]}>
             <Text style={styles.boldText}>We take your privacy seriously.</Text> This means that we make every effort to be transparent about the data we collect and process and to champion your rights to correct, receive and / or delete the data we hold on you.
           </Text>
         </View>
 
         {/* Request Type Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What can we help you with?</Text>
-          <Text style={styles.sectionSubtitle}>Choose one of the options below:</Text>
+          <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>What can we help you with?</Text>
+          <Text style={[styles.sectionSubtitle, { fontSize: sectionSubtitleFontSize }]}>Choose one of the options below:</Text>
 
           <View style={styles.optionsContainer}>
             {/* Correct my details */}
             <TouchableOpacity
               style={[
                 styles.optionCard,
+                { padding: optionCardPadding },
                 selectedTypes.has('correct') && styles.optionCardSelected,
               ]}
               onPress={() => handleRequestTypeToggle('correct')}
@@ -129,16 +158,17 @@ export default function DataRequestScreen() {
                   <View
                     style={[
                       styles.checkbox,
+                      { width: checkboxSize, height: checkboxSize, borderRadius: checkboxSize / 5 },
                       selectedTypes.has('correct') && styles.checkboxSelected,
                     ]}>
                     {selectedTypes.has('correct') && (
-                      <IconSymbol name="checkmark" size={14} color="#111827" />
+                      <IconSymbol name="checkmark" size={checkboxIconSize} color="#111827" />
                     )}
                   </View>
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>Correct my details</Text>
-                  <Text style={styles.optionDescription}>
+                  <Text style={[styles.optionTitle, { fontSize: optionTitleFontSize }]}>Correct my details</Text>
+                  <Text style={[styles.optionDescription, { fontSize: optionDescriptionFontSize }]}>
                     Choose this option if you think that we have details about you that are not factually correct and that you are unable to change yourself.
                   </Text>
                 </View>
@@ -149,6 +179,7 @@ export default function DataRequestScreen() {
             <TouchableOpacity
               style={[
                 styles.optionCard,
+                { padding: optionCardPadding },
                 selectedTypes.has('download') && styles.optionCardSelected,
               ]}
               onPress={() => handleRequestTypeToggle('download')}
@@ -158,16 +189,17 @@ export default function DataRequestScreen() {
                   <View
                     style={[
                       styles.checkbox,
+                      { width: checkboxSize, height: checkboxSize, borderRadius: checkboxSize / 5 },
                       selectedTypes.has('download') && styles.checkboxSelected,
                     ]}>
                     {selectedTypes.has('download') && (
-                      <IconSymbol name="checkmark" size={14} color="#111827" />
+                      <IconSymbol name="checkmark" size={checkboxIconSize} color="#111827" />
                     )}
                   </View>
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>Download my information</Text>
-                  <Text style={styles.optionDescription}>
+                  <Text style={[styles.optionTitle, { fontSize: optionTitleFontSize }]}>Download my information</Text>
+                  <Text style={[styles.optionDescription, { fontSize: optionDescriptionFontSize }]}>
                     Choose this option if you want a zipped file archive of all the personal data we hold on you.
                   </Text>
                 </View>
@@ -178,6 +210,7 @@ export default function DataRequestScreen() {
             <TouchableOpacity
               style={[
                 styles.optionCard,
+                { padding: optionCardPadding },
                 selectedTypes.has('transfer') && styles.optionCardSelected,
               ]}
               onPress={() => handleRequestTypeToggle('transfer')}
@@ -187,16 +220,17 @@ export default function DataRequestScreen() {
                   <View
                     style={[
                       styles.checkbox,
+                      { width: checkboxSize, height: checkboxSize, borderRadius: checkboxSize / 5 },
                       selectedTypes.has('transfer') && styles.checkboxSelected,
                     ]}>
                     {selectedTypes.has('transfer') && (
-                      <IconSymbol name="checkmark" size={14} color="#111827" />
+                      <IconSymbol name="checkmark" size={checkboxIconSize} color="#111827" />
                     )}
                   </View>
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>Transfer my information</Text>
-                  <Text style={styles.optionDescription}>
+                  <Text style={[styles.optionTitle, { fontSize: optionTitleFontSize }]}>Transfer my information</Text>
+                  <Text style={[styles.optionDescription, { fontSize: optionDescriptionFontSize }]}>
                     Choose this option if you want a zipped file archive of all the personal data we hold on you which you can send to another company.
                   </Text>
                 </View>
@@ -207,6 +241,7 @@ export default function DataRequestScreen() {
             <TouchableOpacity
               style={[
                 styles.optionCard,
+                { padding: optionCardPadding },
                 selectedTypes.has('question') && styles.optionCardSelected,
               ]}
               onPress={() => handleRequestTypeToggle('question')}
@@ -216,16 +251,17 @@ export default function DataRequestScreen() {
                   <View
                     style={[
                       styles.checkbox,
+                      { width: checkboxSize, height: checkboxSize, borderRadius: checkboxSize / 5 },
                       selectedTypes.has('question') && styles.checkboxSelected,
                     ]}>
                     {selectedTypes.has('question') && (
-                      <IconSymbol name="checkmark" size={14} color="#111827" />
+                      <IconSymbol name="checkmark" size={checkboxIconSize} color="#111827" />
                     )}
                   </View>
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>I have data-related question</Text>
-                  <Text style={styles.optionDescription}>
+                  <Text style={[styles.optionTitle, { fontSize: optionTitleFontSize }]}>I have data-related question</Text>
+                  <Text style={[styles.optionDescription, { fontSize: optionDescriptionFontSize }]}>
                     Choose this option if you have any personal questions about personal information and data that is not covered by any of the options above.
                   </Text>
                 </View>
@@ -236,16 +272,16 @@ export default function DataRequestScreen() {
 
         {/* Identity Verification Notice */}
         <View style={styles.verificationNotice}>
-          <Text style={styles.verificationText}>
+          <Text style={[styles.verificationText, { fontSize: privacyTextFontSize }]}>
             To ensure that you are the owner of the data, we need to send you an email to verify your identity. Once your identity has been verified we will begin processing your request.
           </Text>
         </View>
 
         {/* Email Input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Email Address (required)</Text>
+          <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Email Address (required)</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { height: inputHeight, fontSize: inputFontSize }]}
             value={email}
             onChangeText={setEmail}
             placeholder="Enter your email address"
@@ -258,9 +294,9 @@ export default function DataRequestScreen() {
 
         {/* Comment Input */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Any Comment (optional)</Text>
+          <Text style={[styles.inputLabel, { fontSize: inputLabelFontSize }]}>Any Comment (optional)</Text>
           <TextInput
-            style={[styles.textInput, styles.textArea]}
+            style={[styles.textInput, styles.textArea, { fontSize: inputFontSize }]}
             value={comment}
             onChangeText={setComment}
             placeholder="Enter any additional comments or details..."
@@ -273,10 +309,10 @@ export default function DataRequestScreen() {
 
         {/* Send Request Button */}
         <TouchableOpacity
-          style={styles.sendButton}
+          style={[styles.sendButton, { height: sendButtonHeight }]}
           onPress={handleSendRequest}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <Text style={styles.sendButtonText}>Send Request</Text>
+          <Text style={[styles.sendButtonText, { fontSize: sendButtonFontSize }]}>Send Request</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -292,47 +328,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   backButton: {
-    width: 44,
-    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
     fontWeight: '600',
     color: '#333333',
     textAlign: 'center',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   headerSpacer: {
-    width: 44,
+    // width set dynamically
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 40,
+    // paddingHorizontal, paddingTop, paddingBottom set dynamically
   },
   privacyStatement: {
     marginBottom: 24,
   },
   privacyText: {
-    fontSize: 15,
     fontWeight: '400',
     color: '#333333',
     fontFamily: 'system-ui',
     lineHeight: 22,
+    // fontSize set dynamically
   },
   boldText: {
     fontWeight: '700',
@@ -341,18 +372,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
     fontWeight: '700',
     color: '#333333',
     fontFamily: 'system-ui',
     marginBottom: 8,
+    // fontSize set dynamically
   },
   sectionSubtitle: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#AAAAAA',
     fontFamily: 'system-ui',
     marginBottom: 16,
+    // fontSize set dynamically
   },
   optionsContainer: {
     gap: 12,
@@ -360,9 +391,9 @@ const styles = StyleSheet.create({
   optionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    padding: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    // padding set dynamically
   },
   optionCardSelected: {
     backgroundColor: '#F5F5F5',
@@ -376,14 +407,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
     borderWidth: 2,
     borderColor: '#333333',
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius set dynamically
   },
   checkboxSelected: {
     backgroundColor: '#FFFFFF',
@@ -393,38 +422,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#333333',
     fontFamily: 'system-ui',
     marginBottom: 8,
+    // fontSize set dynamically
   },
   optionDescription: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#AAAAAA',
     fontFamily: 'system-ui',
     lineHeight: 20,
+    // fontSize set dynamically
   },
   verificationNotice: {
     marginBottom: 24,
   },
   verificationText: {
-    fontSize: 15,
     fontWeight: '400',
     color: '#333333',
     fontFamily: 'system-ui',
     lineHeight: 22,
+    // fontSize set dynamically
   },
   inputSection: {
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#333333',
     fontFamily: 'system-ui',
     marginBottom: 8,
+    // fontSize set dynamically
   },
   textInput: {
     backgroundColor: '#FFFFFF',
@@ -433,10 +462,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontSize: 16,
     fontWeight: '400',
     color: '#333333',
     fontFamily: 'system-ui',
+    // height and fontSize set dynamically
   },
   textArea: {
     minHeight: 150,
@@ -444,17 +473,17 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     width: '100%',
-    height: 52,
     backgroundColor: '#28A745',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+    // height set dynamically
   },
   sendButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
 });

@@ -17,7 +17,6 @@ export default function SplashScreenComponent() {
         // Simulate loading time (replace with actual asset loading)
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (e) {
-        console.warn('Error preparing splash screen:', e);
       } finally {
         setIsReady(true);
         await SplashScreen.hideAsync();

@@ -1,13 +1,13 @@
 import { DeleteIcon } from '@/components/icons/DeleteIcon';
 import { EditIcon } from '@/components/icons/EditIcon';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useImageGridSize } from '@/components/place-ad/shared-styles';
 import * as Device from 'expo-device';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useRef, useState } from 'react';
 import {
     Alert,
-    Dimensions,
     Image,
     Modal,
     Platform,
@@ -16,11 +16,11 @@ import {
     Text,
     TouchableOpacity,
     View,
+    useWindowDimensions,
 } from 'react-native';
 import { ImagePickerModal } from './ImagePickerModal';
-import { IMAGE_SIZE, sharedStyles } from './shared-styles';
+import { sharedStyles } from './shared-styles';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 8;
 
 interface ImageUploaderProps {
@@ -33,6 +33,8 @@ interface ImageUploaderProps {
  * Image uploader component with editing capabilities (set cover, rotate, reorder, delete)
  */
 export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageUploaderProps) {
+  const imageSize = useImageGridSize();
+  const { width, height } = useWindowDimensions();
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [isPicking, setIsPicking] = useState(false);
   const [editDropdownIndex, setEditDropdownIndex] = useState<number | null>(null);
@@ -96,7 +98,6 @@ export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageU
         }
       }
     } catch (e: any) {
-      if (__DEV__) console.error('[ImageUploader] Camera error:', e);
       
       const errorMessage = e?.message || 'Unknown error';
       const isPermissionError = errorMessage.toLowerCase().includes('permission') || 
@@ -155,7 +156,6 @@ export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageU
         onImagesChange([...images, ...newUris]);
       }
     } catch (e: any) {
-      if (__DEV__) console.error('[ImageUploader] ImagePicker error:', e);
       
       const errorMessage = e?.message || 'Unknown error';
       const isPermissionError = errorMessage.toLowerCase().includes('permission') || 
@@ -202,7 +202,6 @@ export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageU
         }
       }
     } catch (e) {
-      if (__DEV__) console.error('[ImageUploader] DocumentPicker error:', e);
       Alert.alert('Upload', 'Unable to open the file picker. Please try again.', [{ text: 'OK' }]);
     } finally {
       setIsPicking(false);
@@ -273,19 +272,18 @@ export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageU
     const dropdownWidth = 160;
     const dropdownHeight = 120;
     const spacing = 4;
-    const screenHeight = Dimensions.get('window').height;
 
     let left = layout.x;
     let top = layout.y + layout.height + spacing;
 
-    if (left + dropdownWidth > SCREEN_WIDTH) {
-      left = SCREEN_WIDTH - dropdownWidth - 16;
+    if (left + dropdownWidth > width) {
+      left = width - dropdownWidth - 16;
     }
     if (left < 16) {
       left = 16;
     }
 
-    if (top + dropdownHeight > screenHeight) {
+    if (top + dropdownHeight > height) {
       top = layout.y - dropdownHeight - spacing;
     }
     if (top < 16) {
@@ -304,7 +302,7 @@ export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageU
       <View style={styles.imageGrid}>
         {images.length < maxImages && (
           <TouchableOpacity
-            style={styles.addImageButton}
+            style={[styles.addImageButton, { width: imageSize, height: imageSize }]}
             onPress={handleAddImage}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             <Text style={styles.addImagePlus}>+</Text>
@@ -314,7 +312,7 @@ export function ImageUploader({ images, onImagesChange, maxImages = 20 }: ImageU
         {images.map((uri, index) => {
           const isCoverImage = index === 0;
           return (
-            <View key={`image-${uri}-${index}`} style={styles.imageItem}>
+            <View key={`image-${uri}-${index}`} style={[styles.imageItem, { width: imageSize, height: imageSize }]}>
               <Image source={{ uri }} style={styles.uploadedImage} />
               {isCoverImage ? (
                 <View
@@ -437,8 +435,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   addImageButton: {
-    width: IMAGE_SIZE,
-    height: IMAGE_SIZE,
+    // Width and height set dynamically via inline styles
     backgroundColor: '#F3F4F6',
     borderRadius: 8,
     alignItems: 'center',
@@ -455,8 +452,7 @@ const styles = StyleSheet.create({
     fontFamily: 'system-ui',
   },
   imageItem: {
-    width: IMAGE_SIZE,
-    height: IMAGE_SIZE,
+    // Width and height set dynamically via inline styles
     borderRadius: 8,
     overflow: 'hidden',
     position: 'relative',

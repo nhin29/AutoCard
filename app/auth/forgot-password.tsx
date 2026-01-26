@@ -1,5 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { authService } from '@/services/auth';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { safeBack } from '@/utils/safeBack';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +18,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ScreenMode = 'email' | 'reset';
 
@@ -31,6 +33,8 @@ type ScreenMode = 'email' | 'reset';
  */
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
   const [mode, setMode] = useState<ScreenMode>('email');
   
   // Email mode state
@@ -46,6 +50,31 @@ export default function ForgotPasswordScreen() {
   
   // Errors
   const [error, setError] = useState<string | null>(null);
+
+  // Calculate responsive values - reduced for small phones with safe area insets
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.lg;
+  const horizontalPaddingWithInsets = Math.max(horizontalPadding, insets.left, insets.right);
+  const topPadding = Math.max(insets.top + (isSmall ? SPACING.base : SPACING.lg), isSmall ? SPACING.xl : SPACING.xxl);
+  const bottomPadding = Math.max(insets.bottom, isSmall ? SPACING.base : SPACING.xl);
+  const logoWidth = isSmall ? Math.min(screenWidth * 0.5, 160) : Math.min(screenWidth * 0.5, 200);
+  const logoHeight = (logoWidth * 60) / 200; // Maintain aspect ratio
+  const titleFontSize = isSmall ? FONT_SIZES.lg : FONT_SIZES['2xl'];
+  const descriptionFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.base;
+  const successDescriptionFontSize = isSmall ? FONT_SIZES.base : 16;
+  const instructionFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputHeight = isSmall ? 40 : 48;
+  const buttonHeight = isSmall ? 42 : 48;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const labelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const buttonTextFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.base;
+  const backIconSize = isSmall ? 18 : 20;
+  const successIconSize = isSmall ? 48 : 64;
+  const logoMarginTop = isSmall ? SPACING.md : SPACING.xl;
+  const logoMarginBottom = isSmall ? SPACING.md : SPACING.xl;
+  const titleMarginBottom = isSmall ? SPACING.sm : SPACING.base;
+  const descriptionMarginBottom = isSmall ? SPACING.md : SPACING.lg;
+  const errorIconSize = isSmall ? 14 : 16;
+  const errorTextFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
 
   const handleBack = () => {
     if (emailSent) {
@@ -85,7 +114,6 @@ export default function ForgotPasswordScreen() {
       // Email sent successfully
       setEmailSent(true);
     } catch (err: any) {
-      console.error('[ForgotPassword] Send reset email error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -138,7 +166,6 @@ export default function ForgotPasswordScreen() {
         ]
       );
     } catch (err: any) {
-      console.error('[ForgotPassword] Reset password error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -162,7 +189,14 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: topPadding,
+              paddingHorizontal: horizontalPaddingWithInsets,
+              paddingBottom: bottomPadding,
+            }
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <StatusBar style="dark" />
@@ -172,55 +206,55 @@ export default function ForgotPasswordScreen() {
             style={styles.backButton}
             onPress={handleBack}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <IconSymbol name="chevron.left" size={20} color="#000000" />
+            <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
           </TouchableOpacity>
 
           {/* Logo */}
-          <View style={styles.logoContainer}>
+          <View style={[styles.logoContainer, { marginTop: logoMarginTop, marginBottom: logoMarginBottom }]}>
             <Image
               source={require('@/assets/images/auth-logo.png')}
-              style={styles.logoImage}
+              style={[styles.logoImage, { width: logoWidth, height: logoHeight }]}
               resizeMode="contain"
             />
           </View>
 
           {/* Success Icon */}
           <View style={styles.successIconContainer}>
-            <IconSymbol name="checkmark.circle.fill" size={64} color="#4CAF50" />
+            <IconSymbol name="checkmark.circle.fill" size={successIconSize} color="#4CAF50" />
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Check Your Email</Text>
+          <Text style={[styles.title, { fontSize: titleFontSize, marginBottom: titleMarginBottom }]}>Check Your Email</Text>
 
           {/* Description */}
-          <Text style={styles.successDescription}>
+          <Text style={[styles.successDescription, { fontSize: successDescriptionFontSize }]}>
             We&apos;ve sent a password reset link to{'\n'}
             <Text style={styles.emailHighlight}>{email}</Text>
           </Text>
 
-          <Text style={styles.instructionText}>
+          <Text style={[styles.instructionText, { fontSize: instructionFontSize, marginBottom: isSmall ? SPACING.lg : 32 }]}>
             Click the link in the email to reset your password. If you don&apos;t see the email, check your spam folder.
           </Text>
 
           {/* Resend Button */}
           <TouchableOpacity
-            style={styles.resendButton}
+            style={[styles.resendButton, { height: buttonHeight }]}
             onPress={handleResendEmail}
             disabled={isSubmitting}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
             {isSubmitting ? (
               <ActivityIndicator color="#4CAF50" size="small" />
             ) : (
-              <Text style={styles.resendButtonText}>Resend Email</Text>
+              <Text style={[styles.resendButtonText, { fontSize: buttonTextFontSize }]}>Resend Email</Text>
             )}
           </TouchableOpacity>
 
           {/* Back to Sign In */}
           <TouchableOpacity
-            style={styles.backToSignInButton}
+            style={[styles.backToSignInButton, { height: buttonHeight }]}
             onPress={() => router.replace('/auth/signin')}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.backToSignInText}>Back to Sign In</Text>
+            <Text style={[styles.backToSignInText, { fontSize: buttonTextFontSize }]}>Back to Sign In</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -234,7 +268,14 @@ export default function ForgotPasswordScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: topPadding,
+            paddingHorizontal: horizontalPaddingWithInsets,
+            paddingBottom: bottomPadding,
+          }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <StatusBar style="dark" />
@@ -245,31 +286,31 @@ export default function ForgotPasswordScreen() {
           onPress={handleBack}
           disabled={isSubmitting}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={20} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
 
         {/* Logo and Tagline */}
-        <View style={styles.logoContainer}>
+        <View style={[styles.logoContainer, { marginTop: logoMarginTop, marginBottom: logoMarginBottom }]}>
           <Image
             source={require('@/assets/images/auth-logo.png')}
-            style={styles.logoImage}
+            style={[styles.logoImage, { width: logoWidth, height: logoHeight }]}
             resizeMode="contain"
           />
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Reset Your Password</Text>
+        <Text style={[styles.title, { fontSize: titleFontSize, marginBottom: titleMarginBottom }]}>Reset Your Password</Text>
 
         {/* Description */}
-        <Text style={styles.description}>
+        <Text style={[styles.description, { fontSize: descriptionFontSize, marginBottom: descriptionMarginBottom }]}>
           Enter your email address and we&apos;ll send you a link to reset your password.
         </Text>
 
         {/* Error Message */}
         {error && (
           <View style={styles.errorContainer}>
-            <IconSymbol name="exclamationmark.circle.fill" size={16} color="#EF4444" />
-            <Text style={styles.errorText}>{error}</Text>
+            <IconSymbol name="exclamationmark.circle.fill" size={errorIconSize} color="#EF4444" />
+            <Text style={[styles.errorText, { fontSize: errorTextFontSize }]}>{error}</Text>
           </View>
         )}
 
@@ -277,9 +318,9 @@ export default function ForgotPasswordScreen() {
         <View style={styles.formContainer}>
           {/* Email Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email Address</Text>
+            <Text style={[styles.inputLabel, { fontSize: labelFontSize }]}>Email Address</Text>
             <TextInput
-              style={[styles.input, error && styles.inputError]}
+              style={[styles.input, { height: inputHeight, fontSize: inputFontSize }, error && styles.inputError]}
               placeholder="Enter your email"
               placeholderTextColor="#9CA3AF"
               value={email}
@@ -298,26 +339,26 @@ export default function ForgotPasswordScreen() {
 
           {/* Send Reset Link Button */}
           <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            style={[styles.submitButton, { height: buttonHeight }, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSendResetLink}
             disabled={isSubmitting}
             {...(Platform.OS === 'web' && { cursor: isSubmitting ? 'not-allowed' : 'pointer' })}>
             {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.submitButtonText}>Send Reset Link</Text>
+              <Text style={[styles.submitButtonText, { fontSize: buttonTextFontSize }]}>Send Reset Link</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Sign Up Link */}
-        <View style={styles.signUpContainer}>
-          <Text style={styles.signUpPrompt}>Don&apos;t have an account?</Text>
+        <View style={[styles.signUpContainer, { marginTop: isSmall ? SPACING.lg : 32 }]}>
+          <Text style={[styles.signUpPrompt, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>Don&apos;t have an account?</Text>
           <TouchableOpacity
             onPress={handleSignUp}
             disabled={isSubmitting}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={styles.signUpLink}>Sign up</Text>
+            <Text style={[styles.signUpLink, { fontSize: isSmall ? FONT_SIZES.xs : FONT_SIZES.sm }]}>Sign up</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -332,72 +373,65 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 50,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    // paddingTop, paddingHorizontal, and paddingBottom set dynamically
   },
   backButton: {
-    marginBottom: 20,
+    marginBottom: SPACING.base,
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -8,
+    marginLeft: -SPACING.sm,
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    // marginTop and marginBottom set dynamically
   },
   logoImage: {
-    width: 200,
-    height: 60,
+    // width and height set dynamically
   },
   successIconContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 24,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 16,
     fontFamily: 'system-ui',
+    // fontSize and marginBottom set dynamically
   },
   description: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 24,
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.base,
     fontFamily: 'system-ui',
+    // fontSize and marginBottom set dynamically
   },
   successDescription: {
-    fontSize: 16,
     fontWeight: '400',
     color: '#374151',
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 16,
+    marginBottom: SPACING.base,
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   emailHighlight: {
     fontWeight: '600',
     color: '#000000',
   },
   instructionText: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 32,
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.base,
     fontFamily: 'system-ui',
+    // fontSize and marginBottom set dynamically
   },
   errorContainer: {
     flexDirection: 'row',
@@ -406,16 +440,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FECACA',
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    gap: 8,
+    padding: SPACING.md,
+    marginBottom: SPACING.base,
+    gap: SPACING.sm,
   },
   errorText: {
     flex: 1,
-    fontSize: 14,
     fontWeight: '400',
     color: '#DC2626',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   formContainer: {
     width: '100%',
@@ -426,22 +460,22 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inputLabel: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#9CA3AF',
     fontFamily: 'system-ui',
+    marginBottom: SPACING.xs,
+    // fontSize set dynamically
   },
   input: {
     width: '100%',
-    height: 48,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    paddingHorizontal: SPACING.base,
     color: '#000000',
     fontFamily: 'system-ui',
+    // height and fontSize set dynamically
   },
   inputError: {
     borderColor: '#EF4444',
@@ -468,70 +502,70 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
-    height: 48,
     backgroundColor: '#4CAF50',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: SPACING.sm,
+    // height set dynamically
   },
   submitButtonDisabled: {
     backgroundColor: '#9CA3AF',
   },
   submitButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   resendButton: {
     width: '100%',
-    height: 48,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#4CAF50',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.base,
+    // height set dynamically
   },
   resendButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   backToSignInButton: {
     width: '100%',
-    height: 48,
     backgroundColor: '#4CAF50',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    // height set dynamically
   },
   backToSignInText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 32,
-    gap: 4,
+    gap: SPACING.xs,
+    // marginTop set dynamically
   },
   signUpPrompt: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#9CA3AF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   signUpLink: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
 });

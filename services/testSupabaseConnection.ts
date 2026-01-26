@@ -22,7 +22,6 @@ export async function testSupabaseConnection(): Promise<void> {
     // Test 2: Check connection
     const isConnected = await checkDatabaseConnection();
     if (!isConnected) {
-      console.warn('[Supabase Test] ⚠ Connection check returned false (this may be normal if _health table does not exist)');
     }
 
     // Test 3: Try a simple query (this will work even if tables don't exist yet)
@@ -32,11 +31,9 @@ export async function testSupabaseConnection(): Promise<void> {
     if (error) {
       // RPC version might not exist, but if we get a connection error vs function not found, that's different
       if (!(error.code === '42883' || error.message.includes('function') || error.message.includes('does not exist'))) {
-        console.warn('[Supabase Test] ⚠ API query returned:', error.message);
       }
     }
   } catch (error: any) {
-    console.error('[Supabase Test] ❌ Connection test failed:', error.message);
     throw error;
   }
 }

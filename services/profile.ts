@@ -35,13 +35,11 @@ export async function getProfile(userId: string): Promise<ProfileResult> {
       .single();
 
     if (error) {
-      console.error('[Profile] Fetch error:', error.message);
       return { profile: null, error: error.message };
     }
 
     return { profile: data as Profile, error: null };
   } catch (error: any) {
-    console.error('[Profile] Fetch exception:', error.message);
     return { profile: null, error: error.message };
   }
 }
@@ -58,13 +56,11 @@ export async function getProfileByEmail(email: string): Promise<ProfileResult> {
       .single();
 
     if (error) {
-      console.error('[Profile] Fetch by email error:', error.message);
       return { profile: null, error: error.message };
     }
 
     return { profile: data as Profile, error: null };
   } catch (error: any) {
-    console.error('[Profile] Fetch by email exception:', error.message);
     return { profile: null, error: error.message };
   }
 }
@@ -82,7 +78,6 @@ export async function getCurrentProfile(): Promise<ProfileResult> {
 
     return getProfile(user.id);
   } catch (error: any) {
-    console.error('[Profile] Get current profile exception:', error.message);
     return { profile: null, error: error.message };
   }
 }
@@ -107,13 +102,11 @@ export async function updateProfile(
       .single();
 
     if (error) {
-      console.error('[Profile] Update error:', error.message);
       return { profile: null, error: error.message };
     }
 
     return { profile: data as Profile, error: null };
   } catch (error: any) {
-    console.error('[Profile] Update exception:', error.message);
     return { profile: null, error: error.message };
   }
 }
@@ -144,7 +137,6 @@ export async function updateCurrentProfile(
 
     return updateProfile(targetUserId, updates);
   } catch (error: any) {
-    console.error('[Profile] Update current profile exception:', error.message);
     return { profile: null, error: error.message };
   }
 }
@@ -220,13 +212,11 @@ export async function isUserVerified(userId: string): Promise<boolean> {
       .single();
 
     if (error) {
-      console.error('[Profile] Verification check error:', error.message);
       return false;
     }
 
     return data?.is_verified ?? false;
   } catch (error: any) {
-    console.error('[Profile] Verification check exception:', error.message);
     return false;
   }
 }
@@ -246,7 +236,6 @@ export async function isTradeAccountApproved(userId: string): Promise<{
       .single();
 
     if (error) {
-      console.error('[Profile] Approval check error:', error.message);
       return { isApproved: false, status: 'unknown' };
     }
 
@@ -255,7 +244,6 @@ export async function isTradeAccountApproved(userId: string): Promise<{
       status: data?.approval_status ?? 'pending',
     };
   } catch (error: any) {
-    console.error('[Profile] Approval check exception:', error.message);
     return { isApproved: false, status: 'unknown' };
   }
 }
@@ -290,13 +278,11 @@ export async function getApprovedBusinessProfiles(options?: {
     const { data, error } = await query;
 
     if (error) {
-      console.error('[Profile] Fetch approved profiles error:', error.message);
       return { profiles: [], error: error.message };
     }
 
     return { profiles: data as Profile[], error: null };
   } catch (error: any) {
-    console.error('[Profile] Fetch approved profiles exception:', error.message);
     return { profiles: [], error: error.message };
   }
 }
@@ -320,13 +306,11 @@ export async function searchBusinessProfiles(
       .limit(options?.limit || 20);
 
     if (error) {
-      console.error('[Profile] Search profiles error:', error.message);
       return { profiles: [], error: error.message };
     }
 
     return { profiles: data as Profile[], error: null };
   } catch (error: any) {
-    console.error('[Profile] Search profiles exception:', error.message);
     return { profiles: [], error: error.message };
   }
 }
@@ -353,7 +337,6 @@ export async function getUserStats(userId: string): Promise<{
       .eq('is_active', true);
 
     if (adsError) {
-      console.error('[Profile] Get ads count error:', adsError.message);
       return { adsCount: 0, followersCount: 0, followingCount: 0, error: adsError.message };
     }
 
@@ -366,7 +349,6 @@ export async function getUserStats(userId: string): Promise<{
       error: null,
     };
   } catch (error: any) {
-    console.error('[Profile] Get user stats exception:', error.message);
     return { adsCount: 0, followersCount: 0, followingCount: 0, error: error.message };
   }
 }

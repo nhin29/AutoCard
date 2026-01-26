@@ -1,4 +1,5 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import { Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export interface DropdownOption {
@@ -28,6 +29,18 @@ export function DropdownModal({
   onClose,
   position,
 }: DropdownModalProps) {
+  const { isSmall } = useResponsive();
+
+  // Calculate responsive values
+  const maxHeight = isSmall ? 240 : 300;
+  const itemPaddingH = isSmall ? SPACING.sm : SPACING.base;
+  const itemPaddingV = isSmall ? SPACING.sm : 12;
+  const itemIconSize = isSmall ? 20 : 24;
+  const itemImageSize = isSmall ? 20 : 24;
+  const itemTextFontSize = isSmall ? FONT_SIZES.sm : 15;
+  const checkmarkSize = isSmall ? 18 : 20;
+  const itemGap = isSmall ? SPACING.sm : 12;
+
   if (!visible) return null;
 
   return (
@@ -48,7 +61,7 @@ export function DropdownModal({
           ]}
           onStartShouldSetResponder={() => true}>
           <ScrollView
-            style={styles.dropdownScrollView}
+            style={[styles.dropdownScrollView, { maxHeight }]}
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled={true}>
             {options.map((option) => (
@@ -56,6 +69,7 @@ export function DropdownModal({
                 key={option.id}
                 style={[
                   styles.categoryItem,
+                  { paddingHorizontal: itemPaddingH, paddingVertical: itemPaddingV, gap: itemGap },
                   selectedValue === option.id && styles.categoryItemSelected,
                 ]}
                 onPress={() => {
@@ -64,19 +78,20 @@ export function DropdownModal({
                 }}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
                 {option.image ? (
-                  <Image source={option.image} style={styles.categoryItemImage} />
+                  <Image source={option.image} style={[styles.categoryItemImage, { width: itemImageSize, height: itemImageSize }]} />
                 ) : option.icon ? (
-                  <Text style={styles.categoryItemIcon}>{option.icon}</Text>
+                  <Text style={[styles.categoryItemIcon, { fontSize: itemIconSize }]}>{option.icon}</Text>
                 ) : null}
                 <Text
                   style={[
                     styles.categoryItemText,
+                    { fontSize: itemTextFontSize },
                     selectedValue === option.id && styles.categoryItemTextSelected,
                   ]}>
                   {option.name}
                 </Text>
                 {selectedValue === option.id && (
-                  <IconSymbol name="checkmark.circle.fill" size={20} color="#4CAF50" />
+                  <IconSymbol name="checkmark.circle.fill" size={checkmarkSize} color="#4CAF50" />
                 )}
               </TouchableOpacity>
             ))}
@@ -96,44 +111,42 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    maxHeight: 300,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 8,
     zIndex: 1000,
+    // maxHeight set dynamically
   },
   dropdownScrollView: {
-    maxHeight: 300,
+    // maxHeight set dynamically
   },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    // paddingHorizontal, paddingVertical, gap set dynamically
   },
   categoryItemSelected: {
     backgroundColor: '#F9FAFB',
   },
   categoryItemIcon: {
-    fontSize: 20,
     marginRight: 12,
+    // fontSize set dynamically
   },
   categoryItemImage: {
-    width: 24,
-    height: 24,
     marginRight: 12,
     resizeMode: 'contain',
+    // width and height set dynamically
   },
   categoryItemText: {
     flex: 1,
-    fontSize: 15,
     fontWeight: '400',
     color: '#000000',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   categoryItemTextSelected: {
     fontWeight: '600',

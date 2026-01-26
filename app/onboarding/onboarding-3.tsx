@@ -1,10 +1,11 @@
 import { OnboardingBackground } from '@/components/onboarding/onboarding-background';
+import { OnboardingContent } from '@/components/onboarding/onboarding-content';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useResponsive } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Third Onboarding Screen
@@ -18,6 +19,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
  */
 export default function OnboardingScreen3() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth, height } = useWindowDimensions();
+  const { isSmall, isMedium } = useResponsive();
 
   const handleBack = () => {
     router.back();
@@ -28,54 +32,53 @@ export default function OnboardingScreen3() {
     router.replace('/auth/signin');
   };
 
+  // Calculate responsive sizes
+  const backIconSize = isSmall ? 18 : 20;
+  const topBarPadding = isSmall ? 8 : 10;
+  const horizontalPadding = isSmall ? 16 : 20;
+  const buttonFontSize = isSmall ? 14 : 16;
+  const buttonHeight = isSmall ? 44 : 52;
+  const buttonPaddingVertical = isSmall ? 12 : 14;
+  const bottomPadding = isSmall ? 20 : 24;
+  
+  // Calculate image size - use percentage of screen height
+  const imageHeight = Math.min(height * 0.4, height * 0.45); // 40-45% of screen height
+
   return (
     <OnboardingBackground>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <StatusBar style="dark" />
       
         {/* Top Bar with Back Button */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingHorizontal: horizontalPadding, paddingTop: topBarPadding }]}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <IconSymbol name="chevron.left" size={20} color="#000000" />
+            <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
           </TouchableOpacity>
         </View>
 
-        {/* Main Content Area */}
-        <View style={[styles.contentArea, { flex: 1, alignItems: 'center', justifyContent: 'center' }]}>
+        {/* Main Content Area - Takes available space */}
+        <View style={[styles.contentArea, { paddingTop: isSmall ? 12 : 20 }]}>
           <Image
             source={require('@/assets/images/onboarding-3.png')}
-            style={{ width: SCREEN_WIDTH, height: undefined, aspectRatio: 1.09, transform: [{ scale: 1.1 }] }}
-            resizeMode="contain"
+            style={[styles.carImage, { height: imageHeight }]}
+            resizeMode="cover"
             accessible={true}
             accessibilityLabel="Illustration showing how boosting helps sell cars faster"
           />
         </View>
 
-        {/* Bottom Section */}
-        <View style={styles.onboardingContentWrapper}>
-          <View style={styles.onboardingContentContainer}>
-            {/* Navigation Dots */}
-            <View style={styles.dotsContainer}>
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-              <View style={[styles.dot, styles.dotActive]} />
-            </View>
-
-            {/* Title */}
-            <Text style={styles.title}>Sell Faster With Boosts</Text>
-
-            {/* Description */}
-            <Text style={styles.description}>
-              Boosted ads appear at the top and reach more buyers.{'\n'}Most boosted cars sell up to 3x faster.
-            </Text>
-
-            {/* Get Started Button */}
+        {/* Bottom Section - Anchored to bottom */}
+        <View style={[styles.onboardingContentWrapper, { paddingBottom: bottomPadding }]}>
+          <OnboardingContent
+            activeDotIndex={2}
+            title="Sell Faster With Boosts"
+            description="Boosted ads appear at the top and reach more buyers. Most boosted cars sell up to 3x faster.">
             <TouchableOpacity
-              style={styles.getStartedButton}
+              style={[styles.getStartedButton, { minHeight: buttonHeight, paddingVertical: buttonPaddingVertical }]}
               onPress={handleGetStarted}>
-              <Text style={styles.getStartedButtonText}>Get Started</Text>
+              <Text style={[styles.getStartedButtonText, { fontSize: buttonFontSize }]}>Get Started</Text>
             </TouchableOpacity>
-          </View>
+          </OnboardingContent>
         </View>
       </View>
     </OnboardingBackground>
@@ -86,7 +89,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-    paddingTop: 50, // Space for status bar
+    justifyContent: 'space-between', // Push content to top and bottom
     paddingHorizontal: 0,
   },
   topBar: {
@@ -95,16 +98,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 10,
+    flexShrink: 0, // Don't shrink the top bar
   },
   backButton: {
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   contentArea: {
-    flex: 1,
+    flex: 1, // Take available space between top bar and bottom content
     backgroundColor: 'transparent',
     paddingHorizontal: 0,
-    paddingTop: 0,
     paddingBottom: 0,
+    justifyContent: 'center',
+    alignItems: 'stretch', // Stretch to full width
+  },
+  carImage: {
+    width: '100%',
+    alignSelf: 'stretch', // Ensure full width
   },
   cardsGrid: {
     gap: 12,
@@ -119,7 +128,7 @@ const styles = StyleSheet.create({
     height: 120,
     backgroundColor: '#F3F4F6', // Light grey placeholder
     borderRadius: 12,
-    maxWidth: (SCREEN_WIDTH - 52) / 2, // Account for padding and gap
+    maxWidth: '48%', // Responsive width for 2-column layout
   },
   featuredCardContainer: {
     position: 'relative',
@@ -192,66 +201,20 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   onboardingContentWrapper: {
-    marginTop: -30,
-  },
-  onboardingContentContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 0,
-    gap: 24,
-    alignItems: 'center',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E0E0E0',
-  },
-  dotActive: {
-    backgroundColor: '#4CAF50',
-  },
-  title: {
-    width: 335,
-    height: 30,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '600',
-    fontSize: 24,
-    lineHeight: 30,
-    textAlign: 'center',
-    color: '#030712', // gray/950
-    alignSelf: 'center',
-  },
-  description: {
-    width: 335,
-    minHeight: 40,
-    fontFamily: 'Source Sans Pro',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 20,
-    textAlign: 'center',
-    color: '#374151', // gray/700
-    alignSelf: 'center',
+    flexShrink: 0, // Don't shrink, keep at bottom
   },
   getStartedButton: {
     width: '100%',
     backgroundColor: '#4CAF50',
     borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 32,
     ...(Platform.OS === 'web' && { cursor: 'pointer' }),
   },
   getStartedButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    flexShrink: 1,
   },
 });

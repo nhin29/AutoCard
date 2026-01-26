@@ -88,7 +88,6 @@ async function uriToBlob(uri: string): Promise<Blob> {
     return blob;
   } catch (error: any) {
     const errorMessage = error?.message || error?.toString() || 'Unknown error converting URI to blob';
-    console.error('[Storage] Error converting URI to blob:', errorMessage);
     throw new Error(`Failed to convert URI to blob: ${errorMessage}`);
   }
 }
@@ -111,7 +110,6 @@ async function readFileAsBase64(uri: string): Promise<string> {
     }
   } catch (error: any) {
     const errorMessage = error?.message || error?.toString() || 'Unknown error reading file';
-    console.error('[Storage] Error reading file as base64:', errorMessage);
     throw error;
   }
 }
@@ -140,7 +138,6 @@ async function readFileAsBase64WithFetch(uri: string): Promise<string> {
       reader.readAsDataURL(blob);
     });
   } catch (error: any) {
-    console.error('[Storage] Fetch-based base64 conversion error:', error);
     throw new Error(`Failed to read file: ${error?.message || 'Unknown error'}`);
   }
 }
@@ -195,7 +192,6 @@ export async function uploadFile(
       });
 
     if (error) {
-      console.error('[Storage] Upload error:', error.message);
       return { url: null, path: null, error: error.message };
     }
 
@@ -211,7 +207,6 @@ export async function uploadFile(
     };
   } catch (error: any) {
     const errorMessage = error?.message || error?.toString() || 'Unknown upload error';
-    console.error('[Storage] Upload exception:', errorMessage);
     return { url: null, path: null, error: errorMessage };
   }
 }
@@ -343,13 +338,11 @@ export async function deleteFile(
       .remove([filePath]);
 
     if (error) {
-      console.error('[Storage] Delete error:', error.message);
       return { error: error.message };
     }
 
     return { error: null };
   } catch (error: any) {
-    console.error('[Storage] Delete exception:', error.message);
     return { error: error.message };
   }
 }
@@ -367,13 +360,11 @@ export async function deleteMultipleFiles(
       .remove(filePaths);
 
     if (error) {
-      console.error('[Storage] Bulk delete error:', error.message);
       return { errors: [error.message] };
     }
 
     return { errors: [] };
   } catch (error: any) {
-    console.error('[Storage] Bulk delete exception:', error.message);
     return { errors: [error.message] };
   }
 }
@@ -392,7 +383,6 @@ export async function deleteUserFolder(
       .list(userId);
 
     if (listError) {
-      console.error('[Storage] List folder error:', listError.message);
       return { error: listError.message };
     }
 
@@ -407,13 +397,11 @@ export async function deleteUserFolder(
       .remove(filePaths);
 
     if (deleteError) {
-      console.error('[Storage] Delete folder error:', deleteError.message);
       return { error: deleteError.message };
     }
 
     return { error: null };
   } catch (error: any) {
-    console.error('[Storage] Delete folder exception:', error.message);
     return { error: error.message };
   }
 }
@@ -444,13 +432,11 @@ export async function getSignedUrl(
       .createSignedUrl(filePath, expiresInSeconds);
 
     if (error) {
-      console.error('[Storage] Signed URL error:', error.message);
       return { url: null, error: error.message };
     }
 
     return { url: data.signedUrl, error: null };
   } catch (error: any) {
-    console.error('[Storage] Signed URL exception:', error.message);
     return { url: null, error: error.message };
   }
 }

@@ -3,12 +3,13 @@ import { adService } from '@/services/ad';
 import type { Ad } from '@/stores/useAdStore';
 import { useAdStore } from '@/stores/useAdStore';
 import type { Ad as DatabaseAd } from '@/types/database';
+import { SPACING, useResponsive } from '@/utils/responsive';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
-    Dimensions,
     FlatList,
     Image,
     NativeScrollEvent,
@@ -18,9 +19,8 @@ import {
     Text,
     TouchableOpacity,
     View,
+    useWindowDimensions,
 } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 /**
  * Convert database Ad format to store Ad format
@@ -60,9 +60,15 @@ function convertDatabaseAdToStore(ad: DatabaseAd): Ad {
  * with navigation controls and image counter.
  */
 export default function AdImagesScreen() {
+  const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const params = useLocalSearchParams<{ adId?: string; initialIndex?: string }>();
   const ads = useAdStore((state) => state.ads);
+  
+  // Responsive padding for small screens
+  const headerPaddingHorizontal = isSmall ? SPACING.sm : SPACING.base;
   const [currentImageIndex, setCurrentImageIndex] = useState(
     params.initialIndex ? parseInt(params.initialIndex) : 0
   );
@@ -98,7 +104,6 @@ export default function AdImagesScreen() {
         const result = await adService.getAdById(params.adId);
         
         if (result.error || !result.ad) {
-          console.error('[AdImages] Error loading ad:', result.error);
           setAd(null);
         } else {
           // Convert database ad to store format
@@ -106,7 +111,6 @@ export default function AdImagesScreen() {
           setAd(convertedAd);
         }
       } catch (error) {
-        console.error('[AdImages] Exception loading ad:', error);
         setAd(null);
       } finally {
         setIsLoadingAd(false);
@@ -266,7 +270,7 @@ export default function AdImagesScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + (isSmall ? SPACING.md : SPACING.base), paddingHorizontal: headerPaddingHorizontal }]}>
         <TouchableOpacity
           style={styles.backButtonHeader}
           onPress={handleBack}
@@ -300,16 +304,20 @@ export default function AdImagesScreen() {
           viewabilityConfig={viewabilityConfig}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           getItemLayout={(_, index) => ({
-            length: SCREEN_WIDTH,
-            offset: SCREEN_WIDTH * index,
+            length: screenWidth,
+            offset: screenWidth * index,
             index,
           })}
-          renderItem={({ item }) => (
-            <View style={styles.imageWrapper}>
+          renderItem={({ item, index }) => (
+            <View style={[styles.imageWrapper, { width: screenWidth }]}>
               <Image
                 source={{ uri: item }}
                 style={styles.mainImage}
                 resizeMode="contain"
+                onError={(error) => {
+                }}
+                onLoad={() => {
+                }}
               />
             </View>
           )}
@@ -354,8 +362,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
+    // paddingTop and paddingHorizontal set dynamically via inline style
     paddingBottom: 16,
     backgroundColor: '#FFFFFF',
   },
@@ -388,16 +395,21 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
     backgroundColor: '#000000',
+    width: '100%',
   },
   imageWrapper: {
-    width: SCREEN_WIDTH,
+    width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#000000',
+    overflow: 'hidden',
+    paddingHorizontal: 0,
   },
   mainImage: {
-    width: SCREEN_WIDTH,
+    width: '100%',
     height: '100%',
+    backgroundColor: '#000000',
   },
   imagePlaceholder: {
     width: '100%',

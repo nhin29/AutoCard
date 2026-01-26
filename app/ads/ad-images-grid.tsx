@@ -1,15 +1,16 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { adService } from '@/services/ad';
 import { safeBack } from '@/utils/safeBack';
+import { useGridItemSize, useResponsive, SPACING } from '@/utils/responsive';
 import type { Ad } from '@/stores/useAdStore';
 import { useAdStore } from '@/stores/useAdStore';
 import type { Ad as DatabaseAd } from '@/types/database';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
-    Dimensions,
     FlatList,
     Image,
     Platform,
@@ -19,10 +20,8 @@ import {
     View,
 } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_COLUMNS = 3;
 const GRID_GAP = 4;
-const IMAGE_SIZE = (SCREEN_WIDTH - GRID_GAP * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
 
 /**
  * Convert database Ad format to store Ad format
@@ -63,8 +62,11 @@ function convertDatabaseAdToStore(ad: DatabaseAd): Ad {
  */
 export default function AdImagesGridScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall } = useResponsive();
   const params = useLocalSearchParams<{ adId?: string; initialIndex?: string }>();
   const ads = useAdStore((state) => state.ads);
+  const imageSize = useGridItemSize(GRID_COLUMNS, GRID_GAP, GRID_GAP);
   
   // Ad state - can come from store or database
   const [ad, setAd] = useState<Ad | null>(null);
@@ -92,7 +94,6 @@ export default function AdImagesGridScreen() {
         const result = await adService.getAdById(params.adId);
         
         if (result.error || !result.ad) {
-          console.error('[AdImagesGrid] Error loading ad:', result.error);
           setAd(null);
         } else {
           // Convert database ad to store format
@@ -100,7 +101,6 @@ export default function AdImagesGridScreen() {
           setAd(convertedAd);
         }
       } catch (error) {
-        console.error('[AdImagesGrid] Exception loading ad:', error);
         setAd(null);
       } finally {
         setIsLoadingAd(false);
@@ -110,6 +110,21 @@ export default function AdImagesGridScreen() {
     loadAd();
   }, [params.adId, ads]);
 
+  // Debug image data - MUST be called before early returns (Rules of Hooks)
+  const images = ad?.uploadedImages || [];
+  useEffect(() => {
+    if (ad && __DEV__) {
+      console.log({
+        hasAd: !!ad,
+        imageCount: images.length,
+        images: images,
+        firstImage: images[0],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ad?.id, images.length]);
+
+  // Early returns AFTER all hooks are called
   if (isLoadingAd) {
     return (
       <View style={styles.container}>
@@ -138,8 +153,6 @@ export default function AdImagesGridScreen() {
     );
   }
 
-  const images = ad.uploadedImages || [];
-
   const handleBack = () => {
     router.replace({
       pathname: '/ads/ad-detail',
@@ -161,11 +174,20 @@ export default function AdImagesGridScreen() {
 
   const renderImageItem = ({ item, index }: { item: string; index: number }) => (
     <TouchableOpacity
-      style={styles.imageItem}
+      style={[styles.imageItem, { width: imageSize, height: imageSize }]}
       onPress={() => handleImagePress(index)}
       activeOpacity={0.8}
       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-      <Image source={{ uri: item }} style={styles.gridImage} resizeMode="cover" />
+      <Image
+        source={{ uri: item }}
+        style={styles.gridImage}
+        resizeMode="cover"
+        onError={(error) => {
+        }}
+        onLoad={() => {
+          // Image loaded successfully
+        }}
+      />
     </TouchableOpacity>
   );
 
@@ -174,7 +196,7 @@ export default function AdImagesGridScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + (isSmall ? SPACING.md : SPACING.base) }]}>
         <TouchableOpacity
           style={styles.backButtonHeader}
           onPress={handleBack}
@@ -215,7 +237,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
+    // paddingTop set dynamically via inline style using SafeAreaInsets
     paddingHorizontal: 16,
     paddingBottom: 16,
     backgroundColor: '#FFFFFF',
@@ -243,8 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: GRID_GAP,
   },
   imageItem: {
-    width: IMAGE_SIZE,
-    height: IMAGE_SIZE,
+    // Width and height set dynamically via inline styles
     marginRight: GRID_GAP,
     backgroundColor: '#F3F4F6',
     borderRadius: 4,

@@ -34,7 +34,6 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   } else {
     // In production, log error but allow build to continue
     // The app will fail at runtime when trying to use Supabase, which is better than build failure
-    console.error('[Supabase] Configuration error:', errorMessage);
   }
 }
 
@@ -74,12 +73,10 @@ export async function checkDatabaseConnection(): Promise<boolean> {
     // Note: _health table may not exist, so we check for specific error types
     if (error && error.code !== 'PGRST116') {
       // PGRST116 is "relation does not exist" - connection is fine, table just doesn't exist
-      console.error('[Supabase] Connection check error:', error.message);
       return false;
     }
     return true;
   } catch (error: any) {
-    console.error('[Supabase] Connection check failed:', error.message);
     return false;
   }
 }

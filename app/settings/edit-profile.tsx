@@ -5,12 +5,14 @@ import { profileService } from '@/services/profile';
 import { storageService } from '@/services/storage';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useResponsive, SPACING, FONT_SIZES } from '@/utils/responsive';
 import type { Profile } from '@/types/database';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -36,10 +38,34 @@ import {
  */
 export default function EditProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
   const { user, setProfile } = useAuthStore();
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Calculate responsive values
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const headerPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const headerPaddingBottom = isSmall ? SPACING.sm : SPACING.base;
+  const backButtonSize = isSmall ? 36 : 40;
+  const backIconSize = isSmall ? 20 : 24;
+  const headerTitleFontSize = isSmall ? FONT_SIZES.md : 18;
+  const scrollPaddingTop = 0; // No top padding since banner starts at top
+  const scrollPaddingBottom = isSmall ? SPACING.xl : 32;
+  const sectionTitleFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const bannerHeight = isSmall ? 180 : 220;
+  const logoSize = isSmall ? 100 : 120;
+  const logoBorderWidth = isSmall ? 4 : 5;
+  const cameraIconSize = isSmall ? 20 : 24;
+  const inputLabelFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const inputFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const inputHeight = isSmall ? 44 : 48;
+  const saveButtonHeight = isSmall ? 48 : 52;
+  const saveButtonFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const reviewMessageFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
 
   // Form fields
   const [businessName, setBusinessName] = useState('');
@@ -118,7 +144,6 @@ export default function EditProfileScreen() {
           }
         }).catch((err) => {
           // Silently fail background update - we already have data from auth store
-          console.warn('[EditProfile] Background profile update failed:', err);
         });
         return;
       }
@@ -127,7 +152,6 @@ export default function EditProfileScreen() {
       const { profile: profileData, error } = await profileService.getCurrentProfile();
       
       if (error) {
-        console.error('[EditProfile] Load error:', error);
         Alert.alert(
           'Error', 
           error.includes('Not authenticated') 
@@ -153,10 +177,8 @@ export default function EditProfileScreen() {
         setBannerUri(profileData.profile_banner_url || null);
       } else {
         // No profile data returned - might be a new user
-        console.warn('[EditProfile] No profile data returned');
       }
     } catch (error: any) {
-      console.error('[EditProfile] Load exception:', error);
       const errorMessage = error?.message || 'Unknown error';
       Alert.alert(
         'Error', 
@@ -197,7 +219,6 @@ export default function EditProfileScreen() {
         openImageEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[EditProfile] Camera error:', e);
       Alert.alert('Camera Error', 'Unable to open camera. Please try again.');
     } finally {
       setIsPicking(false);
@@ -232,7 +253,6 @@ export default function EditProfileScreen() {
         openImageEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[EditProfile] Library error:', e);
       Alert.alert('Error', 'Unable to open photo library. Please try again.');
     } finally {
       setIsPicking(false);
@@ -252,7 +272,6 @@ export default function EditProfileScreen() {
         openImageEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[EditProfile] DocumentPicker error:', e);
       Alert.alert('Error', 'Unable to open file picker. Please try again.');
     } finally {
       setIsPicking(false);
@@ -296,17 +315,9 @@ export default function EditProfileScreen() {
     setShowImagePicker(true);
   };
 
-  const handleRemoveLogo = () => {
-    setLogoUri(null);
-  };
-
   const handlePickBanner = () => {
     if (isPickingBanner) return;
     setShowBannerPicker(true);
-  };
-
-  const handleRemoveBanner = () => {
-    setBannerUri(null);
   };
 
   const takeBannerPhoto = async () => {
@@ -332,7 +343,6 @@ export default function EditProfileScreen() {
         openBannerEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[EditProfile] Banner camera error:', e);
       Alert.alert('Camera Error', 'Unable to open camera. Please try again.');
     } finally {
       setIsPickingBanner(false);
@@ -363,7 +373,6 @@ export default function EditProfileScreen() {
         openBannerEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[EditProfile] Banner library error:', e);
       Alert.alert('Error', 'Unable to open photo library. Please try again.');
     } finally {
       setIsPickingBanner(false);
@@ -383,7 +392,6 @@ export default function EditProfileScreen() {
         openBannerEditor(result.assets[0].uri);
       }
     } catch (e: any) {
-      console.error('[EditProfile] Banner file picker error:', e);
       Alert.alert('Error', 'Unable to open file picker. Please try again.');
     } finally {
       setIsPickingBanner(false);
@@ -493,7 +501,6 @@ export default function EditProfileScreen() {
         ]);
       }
     } catch (error: any) {
-      console.error('[EditProfile] Save error:', error);
       Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
@@ -514,15 +521,21 @@ export default function EditProfileScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerPaddingTop, paddingBottom: headerPaddingBottom, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { width: backButtonSize, height: backButtonSize }]}
           onPress={() => router.back()}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="chevron.left" size={24} color="#000000" />
+          <IconSymbol name="chevron.left" size={backIconSize} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={[styles.headerTitle, { fontSize: headerTitleFontSize }]}>Edit Profile</Text>
+        <TouchableOpacity
+          style={[styles.headerButton, { width: backButtonSize, height: backButtonSize }]}
+          onPress={handlePickLogo}
+          disabled={isPicking}
+          {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+          <IconSymbol name="camera.fill" size={backIconSize} color="#000000" />
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -531,94 +544,105 @@ export default function EditProfileScreen() {
         style={styles.keyboardView}>
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          {/* Profile Banner Upload Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Profile Banner</Text>
-            <View style={styles.bannerContainer}>
+          {/* Header: Banner Image and Logo */}
+          <View style={[styles.headerContainer, { height: bannerHeight }]}>
+            <View style={[styles.bannerContainer, { height: bannerHeight }]}>
               {bannerUri ? (
-                <View style={styles.bannerPreview}>
-                  <Image source={{ uri: bannerUri }} style={styles.bannerImage} resizeMode="cover" />
-                  <TouchableOpacity
-                    style={styles.removeBannerButton}
-                    onPress={handleRemoveBanner}
-                    {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                    <IconSymbol name="xmark.circle.fill" size={24} color="#EF4444" />
-                  </TouchableOpacity>
-                </View>
+                <Image
+                  source={{ uri: bannerUri }}
+                  style={styles.bannerImage}
+                  resizeMode="cover"
+                />
               ) : (
                 <View style={styles.bannerPlaceholder}>
-                  <IconSymbol name="photo" size={40} color="#9CA3AF" />
+                  <IconSymbol name="photo" size={isSmall ? 32 : 40} color="#9CA3AF" />
                 </View>
               )}
+              
+              {/* Camera Icon for Banner Edit - Top Right */}
               <TouchableOpacity
-                style={styles.uploadButton}
+                style={[styles.bannerEditButton, { width: cameraIconSize + 16, height: cameraIconSize + 16 }]}
                 onPress={handlePickBanner}
                 disabled={isPickingBanner}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
                 {isPickingBanner ? (
-                  <ActivityIndicator size="small" color="#4CAF50" />
+                  <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <>
-                    <IconSymbol name="camera.fill" size={20} color="#4CAF50" />
-                    <Text style={styles.uploadButtonText}>
-                      {bannerUri ? 'Change Banner' : 'Upload Banner'}
-                    </Text>
-                  </>
+                  <View style={styles.cameraIconWrapper}>
+                    <IconSymbol name="camera.fill" size={cameraIconSize} color="#FFFFFF" />
+                  </View>
                 )}
               </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Logo Upload Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Business Logo</Text>
-            <View style={styles.logoContainer}>
+            {/* Logo - Overlapping banner and content area */}
+            <View style={[styles.logoContainer, { left: (screenWidth - logoSize) / 2, bottom: -(logoSize / 2) }]}>
               {logoUri ? (
-                <View style={styles.logoPreview}>
-                  <Image source={{ uri: logoUri }} style={styles.logoImage} resizeMode="cover" />
+                <View style={[styles.logoImageContainer, { width: logoSize, height: logoSize, borderRadius: logoSize / 2, borderWidth: logoBorderWidth }]}>
+                  <Image
+                    source={{ uri: logoUri }}
+                    style={[styles.logoImage, { width: logoSize, height: logoSize, borderRadius: logoSize / 2 }]}
+                    resizeMode="cover"
+                  />
+                  {/* Camera Icon Overlay - Centered */}
                   <TouchableOpacity
-                    style={styles.removeLogoButton}
-                    onPress={handleRemoveLogo}
+                    style={styles.logoEditButton}
+                    onPress={handlePickLogo}
+                    disabled={isPicking}
                     {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                    <IconSymbol name="xmark.circle.fill" size={24} color="#EF4444" />
+                    {isPicking ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <View style={styles.cameraIconWrapper}>
+                        <IconSymbol name="camera.fill" size={cameraIconSize} color="#FFFFFF" />
+                      </View>
+                    )}
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View style={styles.logoPlaceholder}>
-                  <IconSymbol name="photo" size={40} color="#9CA3AF" />
+                <View style={[styles.logoPlaceholder, { width: logoSize, height: logoSize, borderRadius: logoSize / 2, borderWidth: logoBorderWidth }]}>
+                  <IconSymbol name="photo" size={isSmall ? 32 : 40} color="#9CA3AF" />
+                  {/* Camera Icon Overlay - Centered */}
+                  <TouchableOpacity
+                    style={styles.logoEditButton}
+                    onPress={handlePickLogo}
+                    disabled={isPicking}
+                    {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
+                    {isPicking ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <View style={styles.cameraIconWrapper}>
+                        <IconSymbol name="camera.fill" size={cameraIconSize} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 </View>
               )}
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={handlePickLogo}
-                disabled={isPicking}
-                {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                {isPicking ? (
-                  <ActivityIndicator size="small" color="#4CAF50" />
-                ) : (
-                  <>
-                    <IconSymbol name="camera.fill" size={20} color="#4CAF50" />
-                    <Text style={styles.uploadButtonText}>
-                      {logoUri ? 'Change Logo' : 'Upload Logo'}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </View>
           </View>
+
+          {/* Review Message */}
+          <View style={[styles.reviewMessageContainer, { paddingTop: logoSize / 2 + (isSmall ? SPACING.md : SPACING.base), paddingHorizontal: horizontalPadding }]}>
+            <Text style={[styles.reviewMessage, { fontSize: reviewMessageFontSize }]}>
+              Please review your details below to ensure they are up to date.
+            </Text>
+          </View>
+
+          {/* Form Content */}
+          <View style={[styles.formContent, { paddingHorizontal: horizontalPadding }]}>
 
           {/* Business Information */}
           {(profile?.account_type === 'trade' || profile?.account_type === 'brand') && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Business Information</Text>
+              <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>Business Information</Text>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Business Name *</Text>
+                <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Business Name *</Text>
                 <TextInput
-                  style={[styles.input, errors.businessName && styles.inputError]}
+                  style={[styles.input, { height: inputHeight, fontSize: inputFontSize }, errors.businessName && styles.inputError]}
                   value={businessName}
                   onChangeText={(text) => {
                     setBusinessName(text);
@@ -639,9 +663,9 @@ export default function EditProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Business Address</Text>
+                <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Business Address</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                   value={businessAddress}
                   onChangeText={setBusinessAddress}
                   placeholder="Enter business address"
@@ -652,9 +676,9 @@ export default function EditProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contact Person Name *</Text>
+                <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Contact Person Name *</Text>
                 <TextInput
-                  style={[styles.input, errors.contactPersonName && styles.inputError]}
+                  style={[styles.input, { height: inputHeight, fontSize: inputFontSize }, errors.contactPersonName && styles.inputError]}
                   value={contactPersonName}
                   onChangeText={(text) => {
                     setContactPersonName(text);
@@ -675,9 +699,9 @@ export default function EditProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>VAT Number</Text>
+                <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>VAT Number</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                   value={vatNumber}
                   onChangeText={setVatNumber}
                   placeholder="Enter VAT number (optional)"
@@ -686,9 +710,9 @@ export default function EditProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Dealer License</Text>
+                <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Dealer License</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                   value={dealerLicense}
                   onChangeText={setDealerLicense}
                   placeholder="Enter dealer license (optional)"
@@ -700,12 +724,12 @@ export default function EditProfileScreen() {
 
           {/* Contact Information */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Contact Information</Text>
+            <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>Contact Information</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Phone Number</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
                 placeholder="Enter phone number"
@@ -717,12 +741,12 @@ export default function EditProfileScreen() {
 
           {/* Social Links */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Social Links</Text>
+            <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>Social Links</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Instagram</Text>
+              <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Instagram</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 value={instagramLink}
                 onChangeText={setInstagramLink}
                 placeholder="https://instagram.com/yourprofile"
@@ -733,9 +757,9 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Facebook</Text>
+              <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Facebook</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 value={facebookLink}
                 onChangeText={setFacebookLink}
                 placeholder="https://facebook.com/yourprofile"
@@ -746,9 +770,9 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Website</Text>
+              <Text style={[styles.label, { fontSize: inputLabelFontSize }]}>Website</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { height: inputHeight, fontSize: inputFontSize }]}
                 value={websiteLink}
                 onChangeText={setWebsiteLink}
                 placeholder="https://yourwebsite.com"
@@ -759,18 +783,19 @@ export default function EditProfileScreen() {
             </View>
           </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-            onPress={handleSave}
-            disabled={isSaving}
-            {...(Platform.OS === 'web' && { cursor: isSaving ? 'not-allowed' : 'pointer' })}>
-            {isSaving ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            )}
-          </TouchableOpacity>
+            {/* Save Button */}
+            <TouchableOpacity
+              style={[styles.saveButton, { height: saveButtonHeight }, isSaving && styles.saveButtonDisabled]}
+              onPress={handleSave}
+              disabled={isSaving}
+              {...(Platform.OS === 'web' && { cursor: isSaving ? 'not-allowed' : 'pointer' })}>
+              {isSaving ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={[styles.saveButtonText, { fontSize: saveButtonFontSize }]}>Save Changes</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -834,29 +859,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   backButton: {
-    width: 40,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
-  headerSpacer: {
-    width: 40,
+  headerButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    // width and height set dynamically
   },
   keyboardView: {
     flex: 1,
@@ -865,113 +889,120 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
+    // paddingBottom set dynamically
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
-    fontFamily: 'system-ui',
-    marginBottom: 16,
-  },
-  bannerContainer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  bannerPreview: {
+  headerContainer: {
     position: 'relative',
     width: '100%',
-    height: 160,
-    borderRadius: 8,
+    marginBottom: 0,
+    // height set dynamically
+  },
+  bannerContainer: {
+    width: '100%',
+    position: 'relative',
+    backgroundColor: '#E5E7EB',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    // height set dynamically
   },
   bannerImage: {
     width: '100%',
     height: '100%',
   },
-  removeBannerButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-  },
   bannerPlaceholder: {
     width: '100%',
-    height: 160,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    height: '100%',
+    backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
+  },
+  bannerEditButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    // Add shadow for visibility
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   logoContainer: {
-    alignItems: 'center',
-    gap: 16,
+    position: 'absolute',
+    zIndex: 10,
+    // left and bottom set dynamically
   },
-  logoPreview: {
+  logoImageContainer: {
     position: 'relative',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    borderColor: '#4CAF50', // Vibrant green border
+    backgroundColor: '#F3F4F6',
     overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#60A5FA',
+    // width, height, borderRadius, borderWidth set dynamically
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
-  },
-  removeLogoButton: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    // width, height, borderRadius set dynamically
   },
   logoPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    position: 'relative',
+    borderColor: '#4CAF50', // Vibrant green border
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
+    overflow: 'hidden',
+    // width, height, borderRadius, borderWidth set dynamically
   },
-  uploadButton: {
-    flexDirection: 'row',
+  logoEditButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
+    justifyContent: 'center',
   },
-  uploadButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4CAF50',
+  cameraIconWrapper: {
+    // Wrapper to add shadow/visibility effects to the icon
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  reviewMessageContainer: {
+    paddingBottom: 16,
+    // paddingTop and paddingHorizontal set dynamically
+  },
+  reviewMessage: {
+    fontWeight: '400',
+    color: '#000000',
     fontFamily: 'system-ui',
+    textAlign: 'left',
+    // fontSize set dynamically
+  },
+  formContent: {
+    // paddingHorizontal set dynamically
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontWeight: '700',
+    color: '#000000',
+    fontFamily: 'system-ui',
+    marginBottom: 16,
+    // fontSize set dynamically
   },
   inputGroup: {
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'system-ui',
     marginBottom: 8,
+    // fontSize set dynamically
   },
   input: {
     backgroundColor: '#F9FAFB',
@@ -980,9 +1011,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 14,
     color: '#000000',
     fontFamily: 'system-ui',
+    // height and fontSize set dynamically
   },
   inputError: {
     borderColor: '#EF4444',
@@ -1000,14 +1031,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+    // height set dynamically
   },
   saveButtonDisabled: {
     backgroundColor: '#9CA3AF',
   },
   saveButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
 });

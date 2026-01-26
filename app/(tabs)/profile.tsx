@@ -10,25 +10,24 @@ import { adService } from '@/services/ad';
 import { profileService } from '@/services/profile';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { Ad as DatabaseAd, Profile } from '@/types/database';
+import { FONT_SIZES, SPACING, useResponsive } from '@/utils/responsive';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 /**
@@ -51,6 +50,8 @@ function formatNumber(num: number): string {
  */
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isSmall, width: screenWidth } = useResponsive();
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState({ adsCount: 0, followersCount: 0, followingCount: 0 });
@@ -69,6 +70,61 @@ export default function ProfileScreen() {
 
   // Track if profile was just updated to avoid unnecessary reload
   const profileUpdateTimestampRef = useRef<number>(0);
+
+  // Calculate responsive values - reduced for small phones
+  const horizontalPadding = isSmall ? SPACING.sm : SPACING.base;
+  // Add extra padding on top of safe area insets for better spacing from status bar
+  const topNavPaddingTop = insets.top + (isSmall ? SPACING.md : SPACING.base);
+  const topNavPaddingBottom = isSmall ? SPACING.sm : SPACING.base;
+  const navTitleFontSize = isSmall ? FONT_SIZES.base : 18;
+  const navIconSize = isSmall ? 18 : 24;
+  const navButtonSize = isSmall ? 36 : 40;
+  const bannerHeight = isSmall ? 140 : 180;
+  const profilePicSize = isSmall ? 90 : 120;
+  const profilePicBorderWidth = isSmall ? 3 : 4;
+  const userNameFontSize = isSmall ? FONT_SIZES.lg : 22;
+  const locationFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const editButtonPaddingH = isSmall ? SPACING.sm : SPACING.md;
+  const editButtonPaddingV = isSmall ? 6 : 8;
+  const editButtonFontSize = isSmall ? FONT_SIZES.xs : FONT_SIZES.sm;
+  const editButtonIconSize = isSmall ? 12 : 14;
+  const editButtonMinWidth = isSmall ? 100 : 120;
+  const statNumberFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const statLabelFontSize = isSmall ? 10 : 11;
+  const tabFontSize = isSmall ? FONT_SIZES.sm : FONT_SIZES.md;
+  const tabPaddingH = isSmall ? SPACING.md : 24;
+  const tabPaddingV = isSmall ? 6 : 8;
+  const sectionTitleFontSize = isSmall ? FONT_SIZES.sm : 14;
+  const sectionPadding = isSmall ? SPACING.sm : 12;
+  const detailTextFontSize = isSmall ? 11 : 12;
+  const detailInputFontSize = isSmall ? 11 : 12;
+  const socialPlatformFontSize = isSmall ? FONT_SIZES.sm : 14;
+  const socialStatusFontSize = isSmall ? 11 : 12;
+  const socialIconSize = isSmall ? 28 : 32;
+  const linkButtonFontSize = isSmall ? 11 : 12;
+  const adFilterTabFontSize = isSmall ? FONT_SIZES.sm : 14;
+  const adFilterTabPaddingH = isSmall ? SPACING.sm : 8;
+  const adFilterTabPaddingV = isSmall ? 10 : 12;
+  const profileAdImageHeight = isSmall ? 140 : 180;
+  const profileAdTitleFontSize = isSmall ? FONT_SIZES.md : 16;
+  const profileAdLocationFontSize = isSmall ? 11 : 12;
+  const profileAdMetricFontSize = isSmall ? 10 : 11;
+  const profileAdPriceFontSize = isSmall ? FONT_SIZES.md : 16;
+  const profileAdMonthlyFontSize = isSmall ? 11 : 12;
+  const cardPadding = isSmall ? SPACING.sm : SPACING.base;
+  const cardGap = isSmall ? SPACING.sm : SPACING.base;
+  // Guest profile responsive values
+  const guestContentPaddingTop = isSmall ? SPACING.md : 20;
+  const guestContentPaddingBottom = isSmall ? SPACING.xl : 40;
+  const guestMessageMarginBottom = isSmall ? SPACING.xl : 32;
+  const guestMessagePaddingTop = isSmall ? SPACING.md : 20;
+  const guestMessageTitleMarginBottom = isSmall ? SPACING.sm : 8;
+  const guestMessageSubtitleMarginBottom = isSmall ? SPACING.md : 24;
+  const guestSectionMarginBottom = isSmall ? SPACING.xl : 32;
+  const guestSectionTitleMarginBottom = isSmall ? SPACING.sm : 16;
+  const guestMenuItemPaddingV = isSmall ? SPACING.sm : 12;
+  const guestMenuItemGap = isSmall ? SPACING.sm : 12;
+  const loginNowButtonMaxWidth = isSmall ? 280 : 300;
 
   useEffect(() => {
     // Only reload if profile is not in auth store or if it's been more than 5 seconds since last update
@@ -118,7 +174,6 @@ export default function ProfileScreen() {
       } else {
         const { profile: profileData, error: profileError } = await profileService.getCurrentProfile();
         if (profileError) {
-          console.error('[Profile] Load error:', profileError);
         } else if (profileData) {
           setProfile(profileData);
           profileUpdateTimestampRef.current = Date.now();
@@ -131,7 +186,6 @@ export default function ProfileScreen() {
         setStats(statsData);
       }
     } catch (error) {
-      console.error('[Profile] Load exception:', error);
     } finally {
       setIsLoading(false);
     }
@@ -145,13 +199,11 @@ export default function ProfileScreen() {
       const { ads, error } = await adService.getAdsByUserId(user.id);
       
       if (error) {
-        console.error('[Profile] Error loading ads:', error);
         setUserAds([]);
       } else {
         setUserAds(ads || []);
       }
     } catch (error) {
-      console.error('[Profile] Exception loading ads:', error);
       setUserAds([]);
     } finally {
       setIsLoadingAds(false);
@@ -221,7 +273,6 @@ export default function ProfileScreen() {
       );
 
       if (error) {
-        console.error('[Profile] Save address error:', error);
         return;
       }
 
@@ -231,7 +282,6 @@ export default function ProfileScreen() {
         setAddressValue('');
       }
     } catch (error) {
-      console.error('[Profile] Save address exception:', error);
     } finally {
       setIsSaving(false);
     }
@@ -250,7 +300,6 @@ export default function ProfileScreen() {
       );
 
       if (error) {
-        console.error('[Profile] Save phone error:', error);
         return;
       }
 
@@ -260,7 +309,6 @@ export default function ProfileScreen() {
         setPhoneValue('');
       }
     } catch (error) {
-      console.error('[Profile] Save phone exception:', error);
     } finally {
       setIsSaving(false);
     }
@@ -316,7 +364,6 @@ export default function ProfileScreen() {
       );
 
       if (error) {
-        console.error('[Profile] Save social link error:', error);
         return;
       }
 
@@ -326,7 +373,6 @@ export default function ProfileScreen() {
         setSocialLinkValue('');
       }
     } catch (error) {
-      console.error('[Profile] Save social link exception:', error);
     } finally {
       setIsSaving(false);
     }
@@ -360,7 +406,6 @@ export default function ProfileScreen() {
       );
 
       if (error) {
-        console.error('[Profile] Unlink social error:', error);
         return;
       }
 
@@ -368,7 +413,6 @@ export default function ProfileScreen() {
         setProfile(updatedProfile);
       }
     } catch (error) {
-      console.error('[Profile] Unlink social exception:', error);
     } finally {
       setIsSaving(false);
     }
@@ -394,7 +438,7 @@ export default function ProfileScreen() {
     const mainImage = ad.uploaded_images?.[0] || null;
     const imageCount = ad.uploaded_images?.length || 0;
     const remainingImages = Math.max(0, imageCount - 1);
-    const cardWidth = (SCREEN_WIDTH - 48) / 2; // 16px padding on each side + 16px gap
+    const cardWidth = (screenWidth - (cardPadding * 2) - cardGap) / 2;
 
     const handleEditAd = () => {
       router.push({
@@ -417,7 +461,7 @@ export default function ProfileScreen() {
         activeOpacity={0.9}
         {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
         {/* Image Container */}
-        <View style={styles.profileAdImageContainer}>
+        <View style={[styles.profileAdImageContainer, { height: profileAdImageHeight }]}>
           {mainImage ? (
             <Image
               source={{ uri: mainImage }}
@@ -426,32 +470,32 @@ export default function ProfileScreen() {
             />
           ) : (
             <View style={styles.profileAdImagePlaceholder}>
-              <IconSymbol name="photo" size={40} color="#9CA3AF" />
+              <IconSymbol name="photo" size={isSmall ? 32 : 40} color="#9CA3AF" />
             </View>
           )}
 
           {/* SPOTLIGHT Badge */}
           <View style={styles.spotlightBadge}>
-            <IconSymbol name="flame.fill" size={12} color="#FCD34D" />
-            <Text style={styles.spotlightText}>SPOTLIGHT</Text>
+            <IconSymbol name="flame.fill" size={isSmall ? 10 : 12} color="#FCD34D" />
+            <Text style={[styles.spotlightText, { fontSize: isSmall ? 9 : 10 }]}>SPOTLIGHT</Text>
           </View>
 
           {/* Edit Button */}
           <TouchableOpacity
-            style={styles.profileAdEditButton}
+            style={[styles.profileAdEditButton, { width: isSmall ? 28 : 32, height: isSmall ? 28 : 32, borderRadius: isSmall ? 14 : 16 }]}
             onPress={(e) => {
               e.stopPropagation();
               handleEditAd();
             }}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <IconSymbol name="pencil" size={14} color="#FFFFFF" />
+            <IconSymbol name="pencil" size={isSmall ? 12 : 14} color="#FFFFFF" />
           </TouchableOpacity>
 
           {/* Image Count Indicator */}
           {remainingImages > 0 && (
             <View style={styles.profileAdImageCount}>
-              <ImageCountIcon size={12} color="#FFFFFF" />
-              <Text style={styles.profileAdImageCountText}>+{remainingImages}</Text>
+              <ImageCountIcon size={isSmall ? 10 : 12} color="#FFFFFF" />
+              <Text style={[styles.profileAdImageCountText, { fontSize: isSmall ? 9 : 10 }]}>+{remainingImages}</Text>
             </View>
           )}
 
@@ -463,6 +507,7 @@ export default function ProfileScreen() {
                   key={index}
                   style={[
                     styles.profileAdDot,
+                    { width: isSmall ? 5 : 6, height: isSmall ? 5 : 6, borderRadius: isSmall ? 2.5 : 3 },
                     index === 0 && styles.profileAdDotActive,
                   ]}
                 />
@@ -472,16 +517,16 @@ export default function ProfileScreen() {
         </View>
 
         {/* Ad Details */}
-        <View style={styles.profileAdDetails}>
-          <Text style={styles.profileAdTitle} numberOfLines={1}>
+        <View style={[styles.profileAdDetails, { padding: isSmall ? SPACING.sm : 12 }]}>
+          <Text style={[styles.profileAdTitle, { fontSize: profileAdTitleFontSize }]} numberOfLines={1}>
             {ad.item_name}
           </Text>
 
           {/* Location */}
           {ad.location && (
             <View style={styles.profileAdLocation}>
-              <LocationIcon width={12} height={12} />
-              <Text style={styles.profileAdLocationText} numberOfLines={1}>
+              <LocationIcon width={isSmall ? 10 : 12} height={isSmall ? 10 : 12} />
+              <Text style={[styles.profileAdLocationText, { fontSize: profileAdLocationFontSize }]} numberOfLines={1}>
                 {ad.location}
               </Text>
             </View>
@@ -490,20 +535,20 @@ export default function ProfileScreen() {
           {/* Engagement Metrics */}
           <View style={styles.profileAdMetrics}>
             <View style={styles.profileAdMetric}>
-              <ViewerIcon width={12} height={9} />
-              <Text style={styles.profileAdMetricText}>
+              <ViewerIcon width={isSmall ? 10 : 12} height={isSmall ? 8 : 9} />
+              <Text style={[styles.profileAdMetricText, { fontSize: profileAdMetricFontSize }]}>
                 {formatNumber(ad.views_count || 0)}
               </Text>
             </View>
             <View style={styles.profileAdMetric}>
-              <LoveIcon width={11} height={10} />
-              <Text style={styles.profileAdMetricText}>
+              <LoveIcon width={isSmall ? 9 : 11} height={isSmall ? 8 : 10} />
+              <Text style={[styles.profileAdMetricText, { fontSize: profileAdMetricFontSize }]}>
                 {formatNumber(0)} {/* Likes not in DB yet */}
               </Text>
             </View>
             <View style={styles.profileAdMetric}>
-              <ShareIcon width={10} height={10} />
-              <Text style={styles.profileAdMetricText}>
+              <ShareIcon width={isSmall ? 8 : 10} height={isSmall ? 8 : 10} />
+              <Text style={[styles.profileAdMetricText, { fontSize: profileAdMetricFontSize }]}>
                 {formatNumber(0)} {/* Shares not in DB yet */}
               </Text>
             </View>
@@ -511,10 +556,10 @@ export default function ProfileScreen() {
 
           {/* Price */}
           <View style={styles.profileAdPrice}>
-            <Text style={styles.profileAdPriceText}>
+            <Text style={[styles.profileAdPriceText, { fontSize: profileAdPriceFontSize }]}>
               {ad.currency} {ad.amount ? parseInt(ad.amount.toString()).toLocaleString() : '0'}
             </Text>
-            <Text style={styles.profileAdMonthlyPayment}>
+            <Text style={[styles.profileAdMonthlyPayment, { fontSize: profileAdMonthlyFontSize }]}>
               {' '}from {ad.currency}{Math.floor((ad.amount || 0) / 48).toLocaleString()}/mo
             </Text>
           </View>
@@ -571,121 +616,121 @@ export default function ProfileScreen() {
         <StatusBar style="dark" />
 
         {/* Top Navigation Bar */}
-        <View style={styles.topNav}>
+        <View style={[styles.topNav, { paddingTop: topNavPaddingTop, paddingBottom: topNavPaddingBottom, paddingHorizontal: horizontalPadding }]}>
           <TouchableOpacity
-            style={styles.navButton}
+            style={[styles.navButton, { width: navButtonSize, height: navButtonSize }]}
             onPress={() => setSidebarVisible(true)}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <MenuIcon width={19} height={17} color="#1F2937" />
+            <MenuIcon width={isSmall ? 16 : 19} height={isSmall ? 14 : 17} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={styles.navTitle}>My Account</Text>
+          <Text style={[styles.navTitle, { fontSize: navTitleFontSize }]}>My Account</Text>
           <TouchableOpacity
-            style={styles.navButton}
+            style={[styles.navButton, { width: navButtonSize, height: navButtonSize }]}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <IconSymbol name="bell" size={24} color="#000000" />
+            <IconSymbol name="bell" size={navIconSize} color="#000000" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.guestScrollView} contentContainerStyle={styles.guestContentContainer}>
+        <ScrollView style={styles.guestScrollView} contentContainerStyle={[styles.guestContentContainer, { paddingHorizontal: horizontalPadding, paddingTop: guestContentPaddingTop, paddingBottom: guestContentPaddingBottom }]}>
           {/* Guest Message */}
-          <View style={styles.guestMessageContainer}>
-            <Text style={styles.guestMessageTitle}>You are currently viewing as a guest</Text>
-            <Text style={styles.guestMessageSubtitle}>Log in or create an account to unlock full features.</Text>
+          <View style={[styles.guestMessageContainer, { marginBottom: guestMessageMarginBottom, paddingTop: guestMessagePaddingTop }]}>
+            <Text style={[styles.guestMessageTitle, { fontSize: isSmall ? FONT_SIZES.md : 18, marginBottom: guestMessageTitleMarginBottom }]}>You are currently viewing as a guest</Text>
+            <Text style={[styles.guestMessageSubtitle, { fontSize: isSmall ? FONT_SIZES.sm : 14, marginBottom: guestMessageSubtitleMarginBottom }]}>Log in or create an account to unlock full features.</Text>
             <TouchableOpacity
-              style={styles.loginNowButton}
+              style={[styles.loginNowButton, { height: isSmall ? 44 : 48, maxWidth: loginNowButtonMaxWidth }]}
               onPress={() => router.push('/auth/signin')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <Text style={styles.loginNowButtonText}>Log in Now</Text>
+              <Text style={[styles.loginNowButtonText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Log in Now</Text>
             </TouchableOpacity>
           </View>
 
           {/* Settings Section */}
-          <View style={styles.guestSection}>
-            <Text style={styles.guestSectionTitle}>Settings</Text>
+          <View style={[styles.guestSection, { marginBottom: guestSectionMarginBottom }]}>
+            <Text style={[styles.guestSectionTitle, { fontSize: isSmall ? FONT_SIZES.md : FONT_SIZES.lg, marginBottom: guestSectionTitleMarginBottom }]}>Settings</Text>
             
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => router.push('/settings/about')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={styles.guestInfoIcon}>
-                <Text style={styles.guestInfoIconText}>i</Text>
+              <View style={[styles.guestInfoIcon, { width: isSmall ? 18 : 20, height: isSmall ? 18 : 20, borderRadius: isSmall ? 9 : 10 }]}>
+                <Text style={[styles.guestInfoIconText, { fontSize: isSmall ? 10 : 12 }]}>i</Text>
               </View>
-              <Text style={styles.guestMenuItemText}>About</Text>
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>About</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => router.push('/legal/terms-of-service')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="creditcard.fill" size={20} color="#1F2937" />
-              <Text style={styles.guestMenuItemText}>Terms of Service</Text>
+              <IconSymbol name="creditcard.fill" size={isSmall ? 18 : 20} color="#1F2937" />
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Terms of Service</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => router.push('/legal/privacy-policy')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="shield.checkmark" size={20} color="#1F2937" />
-              <Text style={styles.guestMenuItemText}>Privacy Policy</Text>
+              <IconSymbol name="shield.checkmark" size={isSmall ? 18 : 20} color="#1F2937" />
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Privacy Policy</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => router.push('/settings/support')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="message.fill" size={20} color="#1F2937" />
-              <Text style={styles.guestMenuItemText}>Support</Text>
+              <IconSymbol name="message.fill" size={isSmall ? 18 : 20} color="#1F2937" />
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Support</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => router.push('/settings/data-request')}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="arrow.down" size={20} color="#1F2937" />
-              <Text style={styles.guestMenuItemText}>Data Request</Text>
+              <IconSymbol name="arrow.down" size={isSmall ? 18 : 20} color="#1F2937" />
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Data Request</Text>
             </TouchableOpacity>
           </View>
 
           {/* Follow us on Section */}
-          <View style={styles.guestSection}>
-            <Text style={styles.guestSectionTitle}>Follow us on</Text>
+          <View style={[styles.guestSection, { marginBottom: guestSectionMarginBottom }]}>
+            <Text style={[styles.guestSectionTitle, { fontSize: isSmall ? FONT_SIZES.md : FONT_SIZES.lg, marginBottom: guestSectionTitleMarginBottom }]}>Follow us on</Text>
             
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => {}}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="house.fill" size={20} color="#1F2937" />
-              <Text style={styles.guestMenuItemText}>www.AutoCart.ie</Text>
+              <IconSymbol name="house.fill" size={isSmall ? 18 : 20} color="#1F2937" />
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>www.AutoCart.ie</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => {}}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={[styles.guestSocialIcon, styles.guestFacebookIcon]}>
-                <Text style={styles.guestSocialIconText}>f</Text>
+              <View style={[styles.guestSocialIcon, styles.guestFacebookIcon, { width: isSmall ? 18 : 20, height: isSmall ? 18 : 20 }]}>
+                <Text style={[styles.guestSocialIconText, { fontSize: isSmall ? 9 : 10 }]}>f</Text>
               </View>
-              <Text style={styles.guestMenuItemText}>Facebook</Text>
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Facebook</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => {}}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={[styles.guestSocialIcon, styles.guestInstagramIcon]}>
-                <IconSymbol name="camera.fill" size={14} color="#FFFFFF" />
+              <View style={[styles.guestSocialIcon, styles.guestInstagramIcon, { width: isSmall ? 18 : 20, height: isSmall ? 18 : 20 }]}>
+                <IconSymbol name="camera.fill" size={isSmall ? 12 : 14} color="#FFFFFF" />
               </View>
-              <Text style={styles.guestMenuItemText}>Instagram</Text>
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>Instagram</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.guestMenuItem}
+              style={[styles.guestMenuItem, { paddingVertical: guestMenuItemPaddingV, gap: guestMenuItemGap }]}
               onPress={() => {}}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <View style={[styles.guestSocialIcon, styles.guestTiktokIcon]}>
-                <Text style={styles.guestSocialIconText}>T</Text>
+              <View style={[styles.guestSocialIcon, styles.guestTiktokIcon, { width: isSmall ? 18 : 20, height: isSmall ? 18 : 20 }]}>
+                <Text style={[styles.guestSocialIconText, { fontSize: isSmall ? 9 : 10 }]}>T</Text>
               </View>
-              <Text style={styles.guestMenuItemText}>TikTok</Text>
+              <Text style={[styles.guestMenuItemText, { fontSize: isSmall ? FONT_SIZES.sm : FONT_SIZES.md }]}>TikTok</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -704,18 +749,18 @@ export default function ProfileScreen() {
       <StatusBar style="dark" />
 
       {/* Top Navigation Bar */}
-      <View style={styles.topNav}>
+      <View style={[styles.topNav, { paddingTop: topNavPaddingTop, paddingBottom: topNavPaddingBottom, paddingHorizontal: horizontalPadding }]}>
         <TouchableOpacity
-          style={styles.navButton}
+          style={[styles.navButton, { width: navButtonSize, height: navButtonSize }]}
           onPress={() => setSidebarVisible(true)}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <MenuIcon width={19} height={17} color="#1F2937" />
+          <MenuIcon width={isSmall ? 16 : 19} height={isSmall ? 14 : 17} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>My Account</Text>
+        <Text style={[styles.navTitle, { fontSize: navTitleFontSize }]}>My Account</Text>
         <TouchableOpacity
-          style={styles.navButton}
+          style={[styles.navButton, { width: navButtonSize, height: navButtonSize }]}
           {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-          <IconSymbol name="bell" size={24} color="#000000" />
+          <IconSymbol name="bell" size={navIconSize} color="#000000" />
         </TouchableOpacity>
       </View>
 
@@ -725,8 +770,8 @@ export default function ProfileScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         {/* Header: Banner Image and Avatar */}
-        <View style={styles.headerContainer}>
-          <View style={styles.bannerContainer}>
+        <View style={[styles.headerContainer, { height: bannerHeight }]}>
+          <View style={[styles.bannerContainer, { height: bannerHeight }]}>
             {profile?.profile_banner_url ? (
               <Image
                 source={{ uri: profile.profile_banner_url }}
@@ -735,97 +780,97 @@ export default function ProfileScreen() {
               />
             ) : (
               <View style={styles.bannerPlaceholder}>
-                <IconSymbol name="photo" size={40} color="#9CA3AF" />
+                <IconSymbol name="photo" size={isSmall ? 32 : 40} color="#9CA3AF" />
               </View>
             )}
             {profile?.account_type === 'trade' && (
               <View style={styles.tradeBadge}>
-                <Text style={styles.tradeBadgeText}>Trade Seller</Text>
+                <Text style={[styles.tradeBadgeText, { fontSize: isSmall ? 9 : 10 }]}>Trade Seller</Text>
               </View>
             )}
           </View>
 
           {/* Profile Picture - Overlapping banner */}
-          <View style={styles.profilePicContainer}>
+          <View style={[styles.profilePicContainer, { left: horizontalPadding, bottom: -(profilePicSize / 2) }]}>
             {profile?.business_logo_url ? (
               <Image
                 source={{ uri: profile.business_logo_url }}
-                style={styles.profilePic}
+                style={[styles.profilePic, { width: profilePicSize, height: profilePicSize, borderRadius: profilePicSize / 2, borderWidth: profilePicBorderWidth }]}
                 resizeMode="cover"
               />
             ) : (
-              <View style={styles.profilePicPlaceholder}>
-                <IconSymbol name="person.fill" size={30} color="#9CA3AF" />
+              <View style={[styles.profilePicPlaceholder, { width: profilePicSize, height: profilePicSize, borderRadius: profilePicSize / 2, borderWidth: profilePicBorderWidth }]}>
+                <IconSymbol name="person.fill" size={isSmall ? 24 : 30} color="#9CA3AF" />
               </View>
             )}
           </View>
         </View>
 
         {/* Body: User Info Below Avatar */}
-        <View style={styles.bodyContainer}>
+        <View style={[styles.bodyContainer, { paddingTop: profilePicSize / 2 + (isSmall ? SPACING.sm : SPACING.base), paddingHorizontal: horizontalPadding }]}>
           {/* User Info Row */}
           <View style={styles.userInfoRow}>
             {/* Left side: Name and Location */}
             <View style={styles.nameLocationContainer}>
               <View style={styles.nameRow}>
                 <View style={styles.nameContainer}>
-                  <Text style={styles.userName}>{getDisplayName()}</Text>
+                  <Text style={[styles.userName, { fontSize: userNameFontSize }]}>{getDisplayName()}</Text>
                   {profile?.verification_badge && (
-                    <IconSymbol name="checkmark.seal.fill" size={16} color="#4CAF50" />
+                    <IconSymbol name="checkmark.seal.fill" size={isSmall ? 14 : 16} color="#4CAF50" />
                   )}
                 </View>
               </View>
 
               {/* Location below name */}
               <View style={styles.locationRow}>
-                <LocationIcon width={16} height={16} color="#6B7280" />
-                <Text style={styles.locationText}>{getLocation()}</Text>
+                <LocationIcon width={isSmall ? 14 : 16} height={isSmall ? 14 : 16} color="#6B7280" />
+                <Text style={[styles.locationText, { fontSize: locationFontSize }]}>{getLocation()}</Text>
               </View>
             </View>
 
             {/* Right side: Edit Button */}
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton, { paddingHorizontal: editButtonPaddingH, paddingVertical: editButtonPaddingV, minWidth: editButtonMinWidth }]}
               onPress={handleEditProfile}
               {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-              <IconSymbol name="pencil" size={16} color="#4CAF50" />
-              <Text style={styles.editButtonText}>Edit Profile</Text>
+              <IconSymbol name="pencil" size={editButtonIconSize} color="#4CAF50" />
+              <Text style={[styles.editButtonText, { fontSize: editButtonFontSize }]}>Edit Profile</Text>
             </TouchableOpacity>
           </View>
 
         {/* Stats Section */}
-        <View style={styles.statsContainer}>
+        <View style={[styles.statsContainer, { marginHorizontal: -horizontalPadding, paddingHorizontal: horizontalPadding }]}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.adsCount}</Text>
-            <Text style={styles.statLabel}>Ads</Text>
+            <Text style={[styles.statNumber, { fontSize: statNumberFontSize }]}>{stats.adsCount}</Text>
+            <Text style={[styles.statLabel, { fontSize: statLabelFontSize }]}>Ads</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.followersCount}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
+            <Text style={[styles.statNumber, { fontSize: statNumberFontSize }]}>{stats.followersCount}</Text>
+            <Text style={[styles.statLabel, { fontSize: statLabelFontSize }]}>Followers</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.followingCount}</Text>
-            <Text style={styles.statLabel}>Following</Text>
+            <Text style={[styles.statNumber, { fontSize: statNumberFontSize }]}>{stats.followingCount}</Text>
+            <Text style={[styles.statLabel, { fontSize: statLabelFontSize }]}>Following</Text>
           </View>
         </View>
 
         {/* Content Tabs */}
-        <View style={styles.tabsContainer}>
+        <View style={[styles.tabsContainer, { marginHorizontal: -horizontalPadding, paddingLeft: horizontalPadding + (isSmall ? SPACING.sm : SPACING.md), paddingRight: horizontalPadding }]}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'ads' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'ads' && styles.tabActive, activeTab === 'ads' && { paddingVertical: tabPaddingV, paddingHorizontal: tabPaddingH }]}
             onPress={() => setActiveTab('ads')}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={[styles.tabText, activeTab === 'ads' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { fontSize: tabFontSize }, activeTab === 'ads' && styles.tabTextActive]}>
               Ads
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'about' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'about' && styles.tabActive, activeTab === 'about' && { paddingVertical: tabPaddingV, paddingHorizontal: tabPaddingH }]}
             onPress={() => setActiveTab('about')}
             {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-            <Text style={[styles.tabText, activeTab === 'about' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { fontSize: tabFontSize }, activeTab === 'about' && styles.tabTextActive]}>
               About
             </Text>
           </TouchableOpacity>
@@ -835,15 +880,15 @@ export default function ProfileScreen() {
         {activeTab === 'about' && (
           <View style={styles.contentArea}>
               {/* Details Section */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Details</Text>
+              <View style={[styles.section, { padding: sectionPadding }]}>
+                <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>Details</Text>
                 
                 {/* Address Field */}
                 {editingField === 'address' ? (
                   <View style={styles.detailItem}>
-                    <LocationIcon width={16} height={16} color="#374151" />
+                    <LocationIcon width={isSmall ? 14 : 16} height={isSmall ? 14 : 16} color="#374151" />
                     <TextInput
-                      style={styles.detailInput}
+                      style={[styles.detailInput, { fontSize: detailInputFontSize }]}
                       placeholder="Enter address"
                       placeholderTextColor="#9CA3AF"
                       value={addressValue}
@@ -854,7 +899,7 @@ export default function ProfileScreen() {
                       onPress={handleSaveAddress}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.saveButton}>Save</Text>
+                      <Text style={[styles.saveButton, { fontSize: isSmall ? FONT_SIZES.sm : 14 }]}>Save</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -862,8 +907,8 @@ export default function ProfileScreen() {
                     style={styles.detailItem}
                     onPress={handleAddAddress}
                     {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                    <LocationIcon width={16} height={16} color="#374151" />
-                    <Text style={styles.detailText}>
+                    <LocationIcon width={isSmall ? 14 : 16} height={isSmall ? 14 : 16} color="#374151" />
+                    <Text style={[styles.detailText, { fontSize: detailTextFontSize }]}>
                       {profile?.business_address || 'Add Address'}
                     </Text>
                   </TouchableOpacity>
@@ -872,9 +917,9 @@ export default function ProfileScreen() {
                 {/* Phone Field */}
                 {editingField === 'phone' ? (
                   <View style={[styles.detailItem, styles.detailItemLast]}>
-                    <IconSymbol name="phone" size={16} color="#374151" />
+                    <IconSymbol name="phone" size={isSmall ? 14 : 16} color="#374151" />
                     <TextInput
-                      style={styles.detailInput}
+                      style={[styles.detailInput, { fontSize: detailInputFontSize }]}
                       placeholder="Enter phone number"
                       placeholderTextColor="#9CA3AF"
                       value={phoneValue}
@@ -886,7 +931,7 @@ export default function ProfileScreen() {
                       onPress={handleSavePhone}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.saveButton}>Save</Text>
+                      <Text style={[styles.saveButton, { fontSize: isSmall ? FONT_SIZES.sm : 14 }]}>Save</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -894,8 +939,8 @@ export default function ProfileScreen() {
                     style={[styles.detailItem, styles.detailItemLast]}
                     onPress={handleAddPhone}
                     {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                    <IconSymbol name="phone" size={16} color="#374151" />
-                    <Text style={styles.detailText}>
+                    <IconSymbol name="phone" size={isSmall ? 14 : 16} color="#374151" />
+                    <Text style={[styles.detailText, { fontSize: detailTextFontSize }]}>
                       {profile?.phone_number || 'Phone No.'}
                     </Text>
                   </TouchableOpacity>
@@ -903,20 +948,20 @@ export default function ProfileScreen() {
               </View>
 
               {/* Social Links Section */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Social Links</Text>
+              <View style={[styles.section, { padding: sectionPadding }]}>
+                <Text style={[styles.sectionTitle, { fontSize: sectionTitleFontSize }]}>Social Links</Text>
                 
                 {/* Facebook */}
                 <View style={styles.socialItem}>
                   <View style={styles.socialLeft}>
-                    <View style={[styles.socialIcon, styles.facebookIcon]}>
-                      <Text style={styles.socialIconText}>f</Text>
+                    <View style={[styles.socialIcon, styles.facebookIcon, { width: socialIconSize, height: socialIconSize, borderRadius: socialIconSize / 2 }]}>
+                      <Text style={[styles.socialIconText, { fontSize: isSmall ? 12 : 14 }]}>f</Text>
                     </View>
                     {editingSocial === 'facebook' ? (
                       <View style={styles.socialInputContainer}>
-                        <IconSymbol name="link" size={14} color="#9CA3AF" />
+                        <IconSymbol name="link" size={isSmall ? 12 : 14} color="#9CA3AF" />
                         <TextInput
-                          style={styles.socialInput}
+                          style={[styles.socialInput, { fontSize: detailInputFontSize }]}
                           placeholder="Enter user id or URL"
                           placeholderTextColor="#9CA3AF"
                           value={socialLinkValue}
@@ -927,8 +972,8 @@ export default function ProfileScreen() {
                       </View>
                     ) : (
                       <View style={styles.socialTextContainer}>
-                        <Text style={styles.socialPlatformName}>Facebook</Text>
-                        <Text style={styles.socialStatus}>
+                        <Text style={[styles.socialPlatformName, { fontSize: socialPlatformFontSize }]}>Facebook</Text>
+                        <Text style={[styles.socialStatus, { fontSize: socialStatusFontSize }]}>
                           {isSocialConnected('facebook') ? getSocialLinkDisplay('facebook') : 'Not Connected'}
                         </Text>
                       </View>
@@ -939,20 +984,20 @@ export default function ProfileScreen() {
                       onPress={() => handleSaveSocialLink('facebook')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link</Text>
                     </TouchableOpacity>
                   ) : isSocialConnected('facebook') ? (
                     <TouchableOpacity
                       onPress={() => handleUnlinkSocial('facebook')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.unlinkButtonText}>Unlink Account</Text>
+                      <Text style={[styles.unlinkButtonText, { fontSize: linkButtonFontSize }]}>Unlink Account</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
                       onPress={() => handleLinkSocial('facebook')}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link Account</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link Account</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -960,14 +1005,14 @@ export default function ProfileScreen() {
                 {/* Instagram */}
                 <View style={styles.socialItem}>
                   <View style={styles.socialLeft}>
-                    <View style={[styles.socialIcon, styles.instagramIcon]}>
-                      <IconSymbol name="camera.fill" size={14} color="#FFFFFF" />
+                    <View style={[styles.socialIcon, styles.instagramIcon, { width: socialIconSize, height: socialIconSize }]}>
+                      <IconSymbol name="camera.fill" size={isSmall ? 12 : 14} color="#FFFFFF" />
                     </View>
                     {editingSocial === 'instagram' ? (
                       <View style={styles.socialInputContainer}>
-                        <IconSymbol name="link" size={14} color="#9CA3AF" />
+                        <IconSymbol name="link" size={isSmall ? 12 : 14} color="#9CA3AF" />
                         <TextInput
-                          style={styles.socialInput}
+                          style={[styles.socialInput, { fontSize: detailInputFontSize }]}
                           placeholder="Enter user id or URL"
                           placeholderTextColor="#9CA3AF"
                           value={socialLinkValue}
@@ -978,8 +1023,8 @@ export default function ProfileScreen() {
                       </View>
                     ) : (
                       <View style={styles.socialTextContainer}>
-                        <Text style={styles.socialPlatformName}>Instagram</Text>
-                        <Text style={styles.socialStatus}>
+                        <Text style={[styles.socialPlatformName, { fontSize: socialPlatformFontSize }]}>Instagram</Text>
+                        <Text style={[styles.socialStatus, { fontSize: socialStatusFontSize }]}>
                           {isSocialConnected('instagram') ? getSocialLinkDisplay('instagram') : 'Not Connected'}
                         </Text>
                       </View>
@@ -990,20 +1035,20 @@ export default function ProfileScreen() {
                       onPress={() => handleSaveSocialLink('instagram')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link</Text>
                     </TouchableOpacity>
                   ) : isSocialConnected('instagram') ? (
                     <TouchableOpacity
                       onPress={() => handleUnlinkSocial('instagram')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.unlinkButtonText}>Unlink Account</Text>
+                      <Text style={[styles.unlinkButtonText, { fontSize: linkButtonFontSize }]}>Unlink Account</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
                       onPress={() => handleLinkSocial('instagram')}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link Account</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link Account</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1011,14 +1056,14 @@ export default function ProfileScreen() {
                 {/* Twitter/X */}
                 <View style={styles.socialItem}>
                   <View style={styles.socialLeft}>
-                    <View style={[styles.socialIcon, styles.twitterIcon]}>
-                      <Text style={[styles.socialIconText, styles.twitterIconText]}>X</Text>
+                    <View style={[styles.socialIcon, styles.twitterIcon, { width: socialIconSize, height: socialIconSize }]}>
+                      <Text style={[styles.socialIconText, styles.twitterIconText, { fontSize: isSmall ? 10 : 12 }]}>X</Text>
                     </View>
                     {editingSocial === 'twitter' ? (
                       <View style={styles.socialInputContainer}>
-                        <IconSymbol name="link" size={14} color="#9CA3AF" />
+                        <IconSymbol name="link" size={isSmall ? 12 : 14} color="#9CA3AF" />
                         <TextInput
-                          style={styles.socialInput}
+                          style={[styles.socialInput, { fontSize: detailInputFontSize }]}
                           placeholder="Enter user id or URL"
                           placeholderTextColor="#9CA3AF"
                           value={socialLinkValue}
@@ -1029,8 +1074,8 @@ export default function ProfileScreen() {
                       </View>
                     ) : (
                       <View style={styles.socialTextContainer}>
-                        <Text style={styles.socialPlatformName}>Twitter</Text>
-                        <Text style={styles.socialStatus}>
+                        <Text style={[styles.socialPlatformName, { fontSize: socialPlatformFontSize }]}>Twitter</Text>
+                        <Text style={[styles.socialStatus, { fontSize: socialStatusFontSize }]}>
                           {isSocialConnected('twitter') ? getSocialLinkDisplay('twitter') : 'Not Connected'}
                         </Text>
                       </View>
@@ -1041,20 +1086,20 @@ export default function ProfileScreen() {
                       onPress={() => handleSaveSocialLink('twitter')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link</Text>
                     </TouchableOpacity>
                   ) : isSocialConnected('twitter') ? (
                     <TouchableOpacity
                       onPress={() => handleUnlinkSocial('twitter')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.unlinkButtonText}>Unlink Account</Text>
+                      <Text style={[styles.unlinkButtonText, { fontSize: linkButtonFontSize }]}>Unlink Account</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
                       onPress={() => handleLinkSocial('twitter')}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link Account</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link Account</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1062,14 +1107,14 @@ export default function ProfileScreen() {
                 {/* YouTube */}
                 <View style={[styles.socialItem, styles.socialItemLast]}>
                   <View style={styles.socialLeft}>
-                    <View style={[styles.socialIcon, styles.youtubeIcon]}>
-                      <IconSymbol name="play.fill" size={12} color="#FFFFFF" />
+                    <View style={[styles.socialIcon, styles.youtubeIcon, { width: socialIconSize, height: socialIconSize }]}>
+                      <IconSymbol name="play.fill" size={isSmall ? 10 : 12} color="#FFFFFF" />
                     </View>
                     {editingSocial === 'youtube' ? (
                       <View style={styles.socialInputContainer}>
-                        <IconSymbol name="link" size={14} color="#9CA3AF" />
+                        <IconSymbol name="link" size={isSmall ? 12 : 14} color="#9CA3AF" />
                         <TextInput
-                          style={styles.socialInput}
+                          style={[styles.socialInput, { fontSize: detailInputFontSize }]}
                           placeholder="Enter user id or URL"
                           placeholderTextColor="#9CA3AF"
                           value={socialLinkValue}
@@ -1080,8 +1125,8 @@ export default function ProfileScreen() {
                       </View>
                     ) : (
                       <View style={styles.socialTextContainer}>
-                        <Text style={styles.socialPlatformName}>Youtube</Text>
-                        <Text style={styles.socialStatus}>
+                        <Text style={[styles.socialPlatformName, { fontSize: socialPlatformFontSize }]}>Youtube</Text>
+                        <Text style={[styles.socialStatus, { fontSize: socialStatusFontSize }]}>
                           {isSocialConnected('youtube') ? getSocialLinkDisplay('youtube') : 'Not Connected'}
                         </Text>
                       </View>
@@ -1092,20 +1137,20 @@ export default function ProfileScreen() {
                       onPress={() => handleSaveSocialLink('youtube')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link</Text>
                     </TouchableOpacity>
                   ) : isSocialConnected('youtube') ? (
                     <TouchableOpacity
                       onPress={() => handleUnlinkSocial('youtube')}
                       disabled={isSaving}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.unlinkButtonText}>Unlink Account</Text>
+                      <Text style={[styles.unlinkButtonText, { fontSize: linkButtonFontSize }]}>Unlink Account</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
                       onPress={() => handleLinkSocial('youtube')}
                       {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                      <Text style={styles.linkButtonText}>Link Account</Text>
+                      <Text style={[styles.linkButtonText, { fontSize: linkButtonFontSize }]}>Link Account</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1114,44 +1159,44 @@ export default function ProfileScreen() {
           )}
 
         {activeTab === 'ads' && (
-          <View style={styles.adsContentArea}>
+          <View style={[styles.adsContentArea, { marginHorizontal: -horizontalPadding, paddingHorizontal: 0 }]}>
             {/* Filter Tabs */}
-            <View style={styles.adFilterTabs}>
+            <View style={[styles.adFilterTabs, { paddingLeft: horizontalPadding, paddingRight: horizontalPadding }]}>
               <TouchableOpacity
-                style={[styles.adFilterTab, adFilter === 'active' && styles.adFilterTabActive]}
+                style={[styles.adFilterTab, { paddingVertical: adFilterTabPaddingV, paddingHorizontal: adFilterTabPaddingH }, adFilter === 'active' && styles.adFilterTabActive]}
                 onPress={() => setAdFilter('active')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <Text style={[styles.adFilterTabText, adFilter === 'active' && styles.adFilterTabTextActive]}>
+                <Text style={[styles.adFilterTabText, { fontSize: adFilterTabFontSize }, adFilter === 'active' && styles.adFilterTabTextActive]}>
                   Active ({getFilterCounts().active})
                 </Text>
-                {adFilter === 'active' && <View style={styles.adFilterTabUnderline} />}
+                {adFilter === 'active' && <View style={[styles.adFilterTabUnderline, { left: adFilterTabPaddingH, right: adFilterTabPaddingH }]} />}
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.adFilterTab, adFilter === 'expired' && styles.adFilterTabActive]}
+                style={[styles.adFilterTab, { paddingVertical: adFilterTabPaddingV, paddingHorizontal: adFilterTabPaddingH }, adFilter === 'expired' && styles.adFilterTabActive]}
                 onPress={() => setAdFilter('expired')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <Text style={[styles.adFilterTabText, adFilter === 'expired' && styles.adFilterTabTextActive]}>
+                <Text style={[styles.adFilterTabText, { fontSize: adFilterTabFontSize }, adFilter === 'expired' && styles.adFilterTabTextActive]}>
                   Expired ({getFilterCounts().expired})
                 </Text>
-                {adFilter === 'expired' && <View style={styles.adFilterTabUnderline} />}
+                {adFilter === 'expired' && <View style={[styles.adFilterTabUnderline, { left: adFilterTabPaddingH, right: adFilterTabPaddingH }]} />}
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.adFilterTab, adFilter === 'pending' && styles.adFilterTabActive]}
+                style={[styles.adFilterTab, { paddingVertical: adFilterTabPaddingV, paddingHorizontal: adFilterTabPaddingH }, adFilter === 'pending' && styles.adFilterTabActive]}
                 onPress={() => setAdFilter('pending')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <Text style={[styles.adFilterTabText, adFilter === 'pending' && styles.adFilterTabTextActive]}>
+                <Text style={[styles.adFilterTabText, { fontSize: adFilterTabFontSize }, adFilter === 'pending' && styles.adFilterTabTextActive]}>
                   Pending ({getFilterCounts().pending})
                 </Text>
-                {adFilter === 'pending' && <View style={styles.adFilterTabUnderline} />}
+                {adFilter === 'pending' && <View style={[styles.adFilterTabUnderline, { left: adFilterTabPaddingH, right: adFilterTabPaddingH }]} />}
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.adFilterTab, adFilter === 'rejected' && styles.adFilterTabActive]}
+                style={[styles.adFilterTab, { paddingVertical: adFilterTabPaddingV, paddingHorizontal: adFilterTabPaddingH }, adFilter === 'rejected' && styles.adFilterTabActive]}
                 onPress={() => setAdFilter('rejected')}
                 {...(Platform.OS === 'web' && { cursor: 'pointer' })}>
-                <Text style={[styles.adFilterTabText, adFilter === 'rejected' && styles.adFilterTabTextActive]}>
+                <Text style={[styles.adFilterTabText, { fontSize: adFilterTabFontSize }, adFilter === 'rejected' && styles.adFilterTabTextActive]}>
                   Rejected ({getFilterCounts().rejected})
                 </Text>
-                {adFilter === 'rejected' && <View style={styles.adFilterTabUnderline} />}
+                {adFilter === 'rejected' && <View style={[styles.adFilterTabUnderline, { left: adFilterTabPaddingH, right: adFilterTabPaddingH }]} />}
               </TouchableOpacity>
             </View>
 
@@ -1165,13 +1210,13 @@ export default function ProfileScreen() {
                 <Text style={styles.emptyText}>No ads found</Text>
               </View>
             ) : (
-              <View style={styles.adsGridContainer}>
+              <View style={[styles.adsGridContainer, { paddingLeft: horizontalPadding, paddingRight: horizontalPadding }]}>
                 <FlatList
                   data={getFilteredAds()}
                   numColumns={2}
                   keyExtractor={(item) => item.id}
                   contentContainerStyle={styles.adsGrid}
-                  columnWrapperStyle={styles.adsGridRow}
+                  columnWrapperStyle={[styles.adsGridRow, { gap: cardGap }]}
                   renderItem={({ item }) => <ProfileAdCard ad={item} />}
                   scrollEnabled={false}
                 />
@@ -1203,22 +1248,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   navButton: {
-    width: 40,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   navTitle: {
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   scrollView: {
     flex: 1,
@@ -1229,15 +1271,15 @@ const styles = StyleSheet.create({
   headerContainer: {
     position: 'relative',
     width: '100%',
-    height: 180,
     marginBottom: 0,
+    // height set dynamically
   },
   bannerContainer: {
     width: '100%',
-    height: 180,
     position: 'relative',
     backgroundColor: '#E5E7EB',
     overflow: 'hidden',
+    // height set dynamically
   },
   bannerImage: {
     width: '100%',
@@ -1260,39 +1302,31 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   tradeBadgeText: {
-    fontSize: 10,
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   profilePicContainer: {
     position: 'absolute',
-    left: 16,
-    bottom: -30,
     zIndex: 10,
+    // left and bottom set dynamically
   },
   profilePic: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
     borderColor: '#60A5FA',
     backgroundColor: '#F3F4F6',
+    // width, height, borderRadius, borderWidth set dynamically
   },
   profilePicPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
     borderColor: '#60A5FA',
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius, borderWidth set dynamically
   },
   bodyContainer: {
-    paddingTop: 40,
-    paddingHorizontal: 16,
     flex: 1,
+    // paddingTop and paddingHorizontal set dynamically
   },
   userInfoRow: {
     flexDirection: 'row',
@@ -1318,28 +1352,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 22,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#D1FAE5',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
     borderRadius: 8,
-    gap: 6,
-    alignSelf: 'stretch',
-    minWidth: 160,
+    gap: 4,
+    alignSelf: 'flex-end',
+    // paddingHorizontal, paddingVertical, and minWidth set dynamically
   },
   editButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   locationRow: {
     flexDirection: 'row',
@@ -1347,10 +1379,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   locationText: {
-    fontSize: 16,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   statsContainer: {
     flexDirection: 'row',
@@ -1358,10 +1390,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     marginBottom: 10,
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
     borderBottomWidth: 3,
     borderColor: '#E5E7EB',
+    // marginHorizontal and paddingHorizontal set dynamically
   },
   statItem: {
     flex: 1,
@@ -1373,44 +1404,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   statNumber: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
     marginBottom: 2,
+    // fontSize set dynamically
   },
   statLabel: {
-    fontSize: 11,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   tabsContainer: {
     flexDirection: 'row',
     gap: 20,
     marginBottom: 10,
-    marginHorizontal: -16,
-    paddingLeft: 24,
-    paddingRight: 16,
     alignItems: 'center',
+    // marginHorizontal, paddingLeft, paddingRight set dynamically
   },
   tab: {
-    paddingVertical: 0,
-    paddingHorizontal: 0,
     backgroundColor: 'transparent',
     alignItems: 'center',
+    // paddingVertical and paddingHorizontal set dynamically for active tab
   },
   tabActive: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 8,
-    paddingHorizontal: 24,
     borderRadius: 20,
+    // paddingVertical and paddingHorizontal set dynamically
   },
   tabText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   tabTextActive: {
     color: '#FFFFFF',
@@ -1423,17 +1450,17 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    padding: 12,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    // padding set dynamically
   },
   sectionTitle: {
-    fontSize: 14,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
     marginBottom: 10,
+    // fontSize set dynamically
   },
   detailItem: {
     flexDirection: 'row',
@@ -1447,14 +1474,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   detailText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#374151',
     textDecorationLine: 'underline',
+    // fontSize set dynamically
   },
   detailInput: {
     flex: 1,
-    fontSize: 12,
     fontWeight: '400',
     color: '#374151',
     borderBottomWidth: 1,
@@ -1462,12 +1488,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 0,
     marginRight: 12,
+    // fontSize set dynamically
   },
   saveButton: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   socialItem: {
     flexDirection: 'row',
@@ -1491,16 +1518,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   socialPlatformName: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#374151',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   socialIcon: {
-    width: 32,
-    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   facebookIcon: {
     backgroundColor: '#1877F2',
@@ -1519,33 +1545,33 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   socialIconText: {
-    fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   twitterIconText: {
-    fontSize: 12,
+    // fontSize set dynamically
   },
   socialStatus: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   linkButtonText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#374151',
     fontFamily: 'system-ui',
     textDecorationLine: 'underline',
+    // fontSize set dynamically
   },
   unlinkButtonText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#EF4444',
     fontFamily: 'system-ui',
     textDecorationLine: 'underline',
+    // fontSize set dynamically
   },
   socialInputContainer: {
     flex: 1,
@@ -1559,11 +1585,11 @@ const styles = StyleSheet.create({
   },
   socialInput: {
     flex: 1,
-    fontSize: 12,
     fontWeight: '400',
     color: '#374151',
     paddingVertical: 0,
     paddingHorizontal: 0,
+    // fontSize set dynamically
   },
   emptyText: {
     fontSize: 14,
@@ -1578,91 +1604,80 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   guestContentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+    // paddingTop, paddingBottom, paddingHorizontal set dynamically
   },
   guestMessageContainer: {
     alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 20,
+    // marginBottom and paddingTop set dynamically
   },
   guestMessageTitle: {
-    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
     fontFamily: 'system-ui',
-    marginBottom: 8,
     textAlign: 'center',
+    // fontSize and marginBottom set dynamically
   },
   guestMessageSubtitle: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'system-ui',
-    marginBottom: 24,
     textAlign: 'center',
+    // fontSize and marginBottom set dynamically
   },
   loginNowButton: {
     width: '100%',
-    maxWidth: 300,
-    height: 48,
     backgroundColor: '#4CAF50',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    // height and maxWidth set dynamically
   },
   loginNowButtonText: {
-    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   guestSection: {
-    marginBottom: 32,
+    // marginBottom set dynamically
   },
   guestSectionTitle: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'system-ui',
-    marginBottom: 16,
+    // fontSize and marginBottom set dynamically
   },
   guestMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    // paddingVertical and gap set dynamically
   },
   guestMenuItemText: {
-    fontSize: 16,
     fontWeight: '400',
     color: '#1F2937',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   guestInfoIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: '#1F2937',
     alignItems: 'center',
     justifyContent: 'center',
+    // width, height, borderRadius set dynamically
   },
   guestInfoIconText: {
-    fontSize: 12,
     fontWeight: '700',
     color: '#1F2937',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   guestSocialIcon: {
-    width: 20,
-    height: 20,
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
+    // width and height set dynamically
   },
   guestFacebookIcon: {
     backgroundColor: '#1877F2',
@@ -1674,54 +1689,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   guestSocialIconText: {
-    fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'system-ui',
+    // fontSize set dynamically
   },
   // Ad Filter Tabs
   adsContentArea: {
-    marginHorizontal: -16,
-    paddingHorizontal: 0,
     paddingBottom: 8,
     flex: 1,
+    // marginHorizontal and paddingHorizontal set dynamically
   },
   adFilterTabs: {
     flexDirection: 'row',
-    paddingLeft: 16,
-    paddingRight: 16,
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    // paddingLeft and paddingRight set dynamically
   },
   adFilterTab: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
     marginRight: 16,
     position: 'relative',
+    // paddingVertical and paddingHorizontal set dynamically
   },
   adFilterTabActive: {
     // Active state handled by text color
   },
   adFilterTabText: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'Source Sans Pro',
+    // fontSize set dynamically
   },
   adFilterTabTextActive: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
     fontFamily: 'Source Sans Pro',
+    // fontSize set dynamically
   },
   adFilterTabUnderline: {
     position: 'absolute',
     bottom: 0,
-    left: 8,
-    right: 8,
     height: 2,
     backgroundColor: '#4CAF50',
+    // left and right set dynamically
   },
   // Profile Ad Card
   profileAdCard: {
@@ -1739,9 +1750,9 @@ const styles = StyleSheet.create({
   },
   profileAdImageContainer: {
     width: '100%',
-    height: 180,
     position: 'relative',
     backgroundColor: '#F3F4F6',
+    // height set dynamically
   },
   profileAdImage: {
     width: '100%',
@@ -1768,23 +1779,21 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   spotlightText: {
-    fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'Source Sans Pro',
     letterSpacing: 0.5,
+    // fontSize set dynamically
   },
   profileAdEditButton: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
+    // width, height, borderRadius set dynamically
   },
   profileAdImageCount: {
     position: 'absolute',
@@ -1800,10 +1809,10 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   profileAdImageCountText: {
-    fontSize: 10,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'Source Sans Pro',
+    // fontSize set dynamically
   },
   profileAdDots: {
     position: 'absolute',
@@ -1816,23 +1825,21 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   profileAdDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    // width, height, borderRadius set dynamically
   },
   profileAdDotActive: {
     backgroundColor: '#FFFFFF',
   },
   profileAdDetails: {
-    padding: 12,
+    // padding set dynamically
   },
   profileAdTitle: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'Source Sans Pro',
     marginBottom: 6,
+    // fontSize set dynamically
   },
   profileAdLocation: {
     flexDirection: 'row',
@@ -1841,11 +1848,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   profileAdLocationText: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'Source Sans Pro',
     flex: 1,
+    // fontSize set dynamically
   },
   profileAdMetrics: {
     flexDirection: 'row',
@@ -1859,10 +1866,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   profileAdMetricText: {
-    fontSize: 11,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'Source Sans Pro',
+    // fontSize set dynamically
   },
   profileAdPrice: {
     marginTop: 4,
@@ -1871,29 +1878,28 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   profileAdPriceText: {
-    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
     fontFamily: 'Source Sans Pro',
     lineHeight: 24,
     letterSpacing: 0,
+    // fontSize set dynamically
   },
   profileAdMonthlyPayment: {
-    fontSize: 12,
     fontWeight: '400',
     color: '#6B7280',
     fontFamily: 'Source Sans Pro',
+    // fontSize set dynamically
   },
   adsGridContainer: {
-    paddingLeft: 16,
-    paddingRight: 16,
+    // paddingLeft and paddingRight set dynamically
   },
   adsGrid: {
     paddingBottom: 20,
   },
   adsGridRow: {
     justifyContent: 'space-between',
-    gap: 16,
+    // gap set dynamically
   },
   adsLoadingContainer: {
     paddingVertical: 40,
