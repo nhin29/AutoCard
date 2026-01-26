@@ -1,6 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -15,6 +15,7 @@ import {
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ViewShot from 'react-native-view-shot';
 import { useResponsive, SPACING } from '@/utils/responsive';
 
 // Crop area size matching the CSS specification (286px base size)
@@ -31,7 +32,7 @@ interface ImageEditorProps {
 
 /**
  * Custom Image Editor with crop (pan/zoom), flip, and save.
- * Crop: pan and pinch to position/scale the image; the visible square is cropped on Next.
+ * Uses ViewShot to capture exactly what's visible in the crop area.
  */
 export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditorProps) {
   const { width: screenWidth } = useWindowDimensions();
@@ -43,6 +44,9 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
   const [flipH, setFlipH] = useState(false);
   const [flipV, setFlipV] = useState(false);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+
+  // Ref for ViewShot to capture the crop area
+  const viewShotRef = useRef<ViewShot>(null);
 
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -84,7 +88,7 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
       imageSize
         ? CROP_SIZE / Math.max(imageSize.width, imageSize.height)
         : 1,
-    [imageSize]
+    [imageSize, CROP_SIZE]
   );
 
   const W = useMemo(
@@ -106,74 +110,23 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
 
   const handleSave = useCallback(async () => {
     // Only allow one processing at a time and image must exist
-    if (!imageUri || isProcessing) return;
+    if (!imageUri || isProcessing || !viewShotRef.current) return;
 
     setIsProcessing(true);
     try {
-      const actions: ImageManipulator.Action[] = [];
-
-      // 1) Crop: compute from visible area (pan/zoom)
-      if (imageSize && imageSize.width > 0 && imageSize.height > 0) {
-        const s = scale.value;
-        const tx = translateX.value;
-        const ty = translateY.value;
-
-        // Calculate base scale to fit image in crop area (again, inside save to guarantee correctness)
-        const cropBaseScale = CROP_SIZE / Math.max(imageSize.width, imageSize.height);
-        const cropWRaw = imageSize.width * cropBaseScale;
-        const cropHRaw = imageSize.height * cropBaseScale;
-        const totalScale = cropBaseScale * s;
-
-        // Position calculation for cropping
-        const imageCenterX = CROP_SIZE / 2 + tx;
-        const imageCenterY = CROP_SIZE / 2 + ty;
-
-        const imageLeft = imageCenterX - (cropWRaw * s) / 2;
-        const imageTop = imageCenterY - (cropHRaw * s) / 2;
-        const imageRight = imageLeft + cropWRaw * s;
-        const imageBottom = imageTop + cropHRaw * s;
-
-        // Clamp crop area to image area (don't let crop origin or size go out of bounds)
-        const cropLeft = Math.max(0, imageLeft);
-        const cropTop = Math.max(0, imageTop);
-        const cropRight = Math.min(CROP_SIZE, imageRight);
-        const cropBottom = Math.min(CROP_SIZE, imageBottom);
-
-        // Convert crop area (on screen) coordinates back to native image coordinates
-        const originX = Math.max(0, Math.round((cropLeft - imageLeft) / totalScale));
-        const originY = Math.max(0, Math.round((cropTop - imageTop) / totalScale));
-        const cropW = Math.round((cropRight - cropLeft) / totalScale);
-        const cropH = Math.round((cropBottom - cropTop) / totalScale);
-
-        // Validate/prevent weird overflow/underflow
-        const finalOriginX = Math.max(0, Math.min(originX, imageSize.width - 1));
-        const finalOriginY = Math.max(0, Math.min(originY, imageSize.height - 1));
-        const finalCropW = Math.max(1, Math.min(cropW, imageSize.width - finalOriginX));
-        const finalCropH = Math.max(1, Math.min(cropH, imageSize.height - finalOriginY));
-
-        // Only crop if size is > 1px
-        if (finalCropW > 1 && finalCropH > 1) {
-          actions.push({
-            crop: {
-              originX: finalOriginX,
-              originY: finalOriginY,
-              width: finalCropW,
-              height: finalCropH,
-            }
-          });
-        }
+      // Capture exactly what's visible in the crop area using ViewShot
+      const capturedUri = await viewShotRef.current.capture?.();
+      
+      if (!capturedUri) {
+        // Fallback to original image if capture fails
+        onSave(imageUri);
+        return;
       }
 
-      // 2) Flips (use string consts for compatibility)
-      if (flipH) actions.push({ flip: ImageManipulator.FlipType.Horizontal });
-      if (flipV) actions.push({ flip: ImageManipulator.FlipType.Vertical });
-
-      // 3) Resize for logo
-      actions.push({ resize: { width: 500, height: 500 } });
-
+      // Resize the captured image to 500x500 for logo use
       const result = await ImageManipulator.manipulateAsync(
-        imageUri,
-        actions,
+        capturedUri,
+        [{ resize: { width: 500, height: 500 } }],
         {
           compress: 0.8,
           format: ImageManipulator.SaveFormat.PNG,
@@ -181,6 +134,7 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
       );
       onSave(result.uri);
     } catch (e) {
+      console.error('[ImageEditor] Save error:', e);
       // Only call onSave fallback if error and imageUri exists
       if (imageUri) onSave(imageUri);
     } finally {
@@ -188,7 +142,7 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
       setFlipH(false);
       setFlipV(false);
     }
-  }, [imageUri, isProcessing, imageSize, flipH, flipV, onSave, scale, translateX, translateY]);
+  }, [imageUri, isProcessing, onSave]);
 
   const handleCancel = useCallback(() => {
     setFlipH(false);
@@ -250,15 +204,17 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
   const composed = Gesture.Simultaneous(pinch, pan);
 
   // Keep imageAnimatedStyle in sync with W/H
-  const imageAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: CROP_SIZE / 2 - W / 2 },
-      { translateY: CROP_SIZE / 2 - H / 2 },
-      { scale: scale.value },
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-    ],
-  }), [W, H]);
+  const imageAnimatedStyle = useAnimatedStyle(() => {
+    const s = scale.value;
+    const displayW = W * s;
+    const displayH = H * s;
+    return {
+      width: displayW,
+      height: displayH,
+      left: CROP_SIZE / 2 - displayW / 2 + translateX.value,
+      top: CROP_SIZE / 2 - displayH / 2 + translateY.value,
+    };
+  }, [W, H, CROP_SIZE]);
 
   // Modal shouldn't render children if not active (fixes screen reader & Android bug)
   if (!visible || !imageUri) return null;
@@ -283,24 +239,33 @@ export function ImageEditor({ visible, imageUri, onSave, onCancel }: ImageEditor
             {/* Crop area border */}
             <View style={[styles.cropAreaBorder, { width: CROP_SIZE, height: CROP_SIZE }]} pointerEvents="none" />
 
-            {/* Image container with crop mask */}
-            <View style={[styles.cropBox, { width: CROP_SIZE, height: CROP_SIZE }]}>
+            {/* Image container with crop mask - wrapped in ViewShot for capture */}
+            <ViewShot
+              ref={viewShotRef}
+              options={{
+                format: 'png',
+                quality: 1,
+                width: CROP_SIZE,
+                height: CROP_SIZE,
+              }}
+              style={[styles.cropBox, { width: CROP_SIZE, height: CROP_SIZE }]}
+            >
               <View style={styles.gestureFill}>
                 <GestureDetector gesture={composed}>
-                  <Animated.View style={[styles.imageInner, { width: W, height: H }, imageAnimatedStyle]}>
+                  <Animated.View style={[styles.imageInner, imageAnimatedStyle]}>
                     <Image
                       source={{ uri: imageUri }}
                       style={[
                         styles.previewImage,
                         { transform: [{ scaleX: flipH ? -1 : 1 }, { scaleY: flipV ? -1 : 1 }] },
                       ]}
-                      resizeMode="cover"
+                      resizeMode="stretch"
                       accessible={false}
                     />
                   </Animated.View>
                 </GestureDetector>
               </View>
-            </View>
+            </ViewShot>
 
             {/* Grid overlay - detailed grid matching CSS specification */}
             <View style={styles.gridOverlay} pointerEvents="none">
@@ -447,6 +412,7 @@ const styles = StyleSheet.create({
     // Width and height set dynamically via inline styles
     overflow: 'hidden',
     position: 'relative',
+    backgroundColor: '#000000', // Black background for areas outside image
   },
   gestureFill: {
     position: 'absolute',
@@ -457,8 +423,6 @@ const styles = StyleSheet.create({
   },
   imageInner: {
     position: 'absolute',
-    left: 0,
-    top: 0,
   },
   previewImage: {
     width: '100%',
